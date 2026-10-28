@@ -634,7 +634,7 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
 
     <button class="sb-ws" title="切换工作空间" onclick="workspaceDialog()">
       <div class="sb-ws-face">h</div>
-      <div class="sb-ws-name">hao 的工作空间</div>
+      <div class="sb-ws-name">工作空间</div>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
     </button>
 
@@ -643,36 +643,7 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
       新建任务
     </div>
 
-    <div class="sb-scroll">
-      <div class="sb-label">最近任务</div>
-
-      <div class="sb-item active" onclick="openTask('settlement')">
-        <span class="sb-dot pulse"></span>
-        <span class="t">结算说明文初稿</span>
-      </div>
-      <div class="sb-item" onclick="openTask('growth')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-        <span class="t">用户增长复盘</span>
-        <span class="s">昨天</span>
-      </div>
-      <div class="sb-item" onclick="openTask('pricing')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <span class="t">竞品定价调研</span>
-        <span class="s">周一</span>
-      </div>
-      <div class="sb-item" onclick="openTask('refactor')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
-        <span class="t">订单模块重构</span>
-        <span class="s">10-24</span>
-      </div>
-
-      <div class="sb-label">历史</div>
-      <div class="sb-item" role="button" tabindex="0">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>
-        <span class="t">全部任务</span>
-        <span class="s">24</span>
-      </div>
-    </div>
+    <div class="sb-scroll"><div class="sb-label">正在读取本机记录…</div></div>
 
     <div class="sb-foot">
       <div class="sb-item" onclick="openSettings()">
@@ -701,10 +672,10 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
       <button class="iconbtn" id="expandBtn" title="展开侧栏" aria-label="展开侧栏" style="display:none" onclick="toggleSidebar()">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m14 15 3-3-3-3"/></svg>
       </button>
-      <div class="topbar-title" id="taskTitle">结算说明文初稿</div>
+      <div class="topbar-title" id="taskTitle">工作空间</div>
       <div class="topbar-sub" id="taskSub">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        运行中
+        连接本机服务…
       </div>
       <div class="top-spacer"></div>
       <button class="iconbtn" onclick="toggleTheme()" title="切换主题" aria-label="切换主题" id="themeBtn">

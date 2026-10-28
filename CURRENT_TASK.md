@@ -1,3 +1,5 @@
+> **暂停交接：先读 [HANDOFF_TO_OPUS_V12.md](./HANDOFF_TO_OPUS_V12.md)。当前分支为未验收 WIP，独审有3项待修问题，不代表G0–G5已通过。**
+
 # 当前任务｜Agent Studio v1.2：项目经理、员工授权、项目对话与真实协作
 
 > 2026-10-28｜状态：REQUIREMENTS READY / IMPLEMENTATION NOT VERIFIED

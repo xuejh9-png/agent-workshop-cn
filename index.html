@@ -611,6 +611,11 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
 @media(min-width:861px){.sidebar{position:relative;width:240px;box-shadow:none}#expandBtn{display:none!important}.sidebar.collapsed~.main #expandBtn{display:flex!important}.nav-shade{display:none!important}}
 @media(max-width:860px){.sidebar{position:fixed;width:240px}.sidebar:not(.collapsed)~.main{pointer-events:none}.app:has(.sidebar:not(.collapsed)) .nav-shade{display:block;position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.22)}.thread{padding:24px 20px 8px}}
 @media(max-width:500px){.topbar-sub{display:none}.topbar{gap:6px}.turn{gap:8px}.turn-av{width:23px;height:23px}.thread{padding:24px 14px 6px}.run-head{flex-wrap:wrap}.run-host{width:100%;padding-left:16px;text-align:left}.composer-bar{padding:4px;gap:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 36px 36px}.composer-bar .bar-spacer,.composer-bar .bar-sep{display:none}.composer-bar .chip{min-width:0;max-width:100%}.composer-bar .bar-ico{width:36px}.chip{padding:0 5px;max-width:190px;font-size:11px}.chip .lbl{display:inline}.bar-sep{display:none}.composer-wrap{padding:8px 10px 38px}.composer-field{padding:12px 12px 4px}.empty{padding:32px 6px}.empty-title{font-size:25px}.empty-sub{font-size:13px}.demo-tag{left:0;right:0;text-align:center;font-size:10px}.pop{left:0;width:calc(100vw - 22px)}.run-foot{flex-wrap:wrap}.drawer{max-width:100%;width:100%}}
+
+.brand-mark{display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}.brand-mark svg{width:26px;height:26px}.empty-mark{border:0;width:44px;height:44px;background:var(--accent-soft)}.empty-mark svg{width:30px;height:30px}
+.answer-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85}.answer-meta{font-size:11px;color:var(--text-3);margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}.answer-meta button{font-size:11px;color:var(--text-2)}
+.status-note{font-size:13px;color:var(--text-2);margin-top:8px}.error-note{background:var(--err-soft);color:var(--err);padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap}.file-evidence{padding:10px 0;font-size:12px;color:var(--text-2)}.file-evidence button{color:var(--accent);padding:5px 7px;border:1px solid var(--border);border-radius:6px;margin-right:6px}
+.settings-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}.settings-tabs button{font-size:12px;padding:7px 10px;background:var(--canvas);border-radius:6px}.settings-tabs button.active{background:var(--accent-soft);color:var(--accent)}.model-test-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}.model-test-row strong{font-size:13px}.model-test-row small{display:block;color:var(--text-2);font-size:11px}.setting-row input[type=checkbox]{width:auto}.write-permission{font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:6px;padding:3px 12px 9px}.write-permission input{accent-color:var(--accent)}.help-block{font-size:12px;color:var(--text-2);line-height:1.8;padding:12px 0}.new-space{display:flex;gap:8px;margin-top:18px}.new-space input{min-width:0;flex:1;background:var(--canvas);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:7px}.kv{line-height:1.8}.topbar-sub{font-size:11px}.busy{opacity:.7;pointer-events:none}
 </style>
 </head>
 <body>
@@ -775,7 +780,7 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
   </main>
 </div>
 
-<div class="demo-tag" role="note">DEMO · 设计原型，任务与模型均为示例</div>
+<div class="demo-tag" role="note">本机运行 · 文件限当前工作空间</div>
 
 <dialog id="modal"><div id="modalBody"></div></dialog>
 <script src="app.js"></script>

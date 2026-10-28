@@ -7,9 +7,20 @@ EXTENSIONS = {'.md', '.txt'}
 class ScopedFiles:
     def __init__(self, root, writable=False, audit=None):
         original = Path(root).absolute()
-        if original.is_symlink(): raise ValueError('工作空间根目录不得为符号链接')
-        self.root = original.resolve(strict=True)
-        self.root_fd = os.open(original, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        # macOS has immutable OS aliases /var and /tmp. Canonicalize only
+        # those known prefixes; never resolve user-controlled ancestors.
+        if sys.platform == 'darwin' and len(original.parts)>1 and original.parts[1] in ('var','tmp'):
+            original = Path('/private', *original.parts[1:])
+        self.root = original
+        fd = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            for component in original.parts[1:]:
+                if component in ('.', '..'): raise ValueError('工作空间路径无效')
+                child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+                os.close(fd);fd=child
+            self.root_fd = fd
+        except BaseException:
+            os.close(fd);raise
         self.writable = writable
         self.audit = Path(audit) if audit else None
 

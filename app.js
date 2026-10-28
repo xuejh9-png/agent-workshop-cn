@@ -82,12 +82,13 @@ function renderRun(run){
   return turn('你','<div class="answer-body">'+esc(run.text)+'</div>')+turn('协调器',answer);
 }
 function render(){
+  const followEnd=$('scroll').scrollHeight-$('scroll').scrollTop-$('scroll').clientHeight<80;
   renderSidebar();const run=activeRun();$('taskTitle').textContent=run?run.text.slice(0,24):(currentSpace()?.name||'工作空间');$('taskSub').textContent=run?statuses[run.status]:'本机运行';
   if(!run){$('thread').innerHTML=`<section class="empty"><div class="empty-inner"><div class="empty-mark">${mark}</div><h1 class="empty-title">今天要完成什么？</h1><p class="empty-sub">把目标说清楚，剩下的交给协调器。<br>直接问答，或在当前工作空间中完成文件任务。</p><div class="suggestions"><button class="suggestion" onclick="fillTask('你是谁？')">开始对话 ↗</button><button class="suggestion" onclick="fillTask('列出当前工作空间的文本文件，读取其中一份并摘要两句。')">整理一份资料 ↗</button><button class="suggestion" onclick="fillTask('创建一份 project-note.md，说明这个工作空间的目标与验收方式。')">生成项目说明 ↗</button></div><div class="sample-intro"><small>${currentModel()?'主控：'+esc(currentModel())+' · 已验证连接':'首次使用，请先选择并测试主控型号'}</small><button onclick="openSettings()"><span>主控、执行器与模型</span><span style="color:var(--text-3)">设置 →</span></button><p class="muted">只读为默认。创建文件需在输入框下方授权本次操作。</p></div></div></section>`;}
   else $('thread').innerHTML=chain().map(renderRun).join('');
-  updateHint();if($('drawer').classList.contains('open')&&document.querySelector('.drawer-title').textContent==='任务详情')renderDetails();
+  updateHint();if(followEnd)$('scroll').scrollTop=$('scroll').scrollHeight;if($('drawer').classList.contains('open')&&document.querySelector('.drawer-title').textContent==='任务详情')renderDetails();
 }
-function openDrawer(id){if(id)state.detailId=id;else state.detailId=state.active;drawerFocus=document.activeElement;renderDetails();$('drawer').classList.add('open');$('drawer').inert=false;$('drawer').setAttribute('aria-hidden','false');$('drawer').querySelector('button').focus();}
+function openDrawer(id){if(id)state.detailId=id;else state.detailId=state.active;drawerFocus=document.activeElement;renderDetails();$('drawer').classList.add('open');$('drawer').inert=false;$('drawer').setAttribute('aria-hidden','false');requestAnimationFrame(()=>$('drawer').querySelector('button').focus());}
 function closeDrawer(){$('drawer').classList.remove('open');$('drawer').inert=true;$('drawer').setAttribute('aria-hidden','true');drawerFocus?.focus?.();}
 function toggleDrawer(){$('drawer').classList.contains('open')?closeDrawer():openDrawer();}
 function renderDetails(){

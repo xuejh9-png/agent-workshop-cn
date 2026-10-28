@@ -71,6 +71,7 @@ class CodexAdapter:
         on_event({'type':'call.started','role':role,'requestedModel':model,'effort':effort,'adapter':'codex exec','sandbox':'read-only','shell':False})
         p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,cwd=cwd,start_new_session=True)
         with self.lock:self.processes[run_id]=p
+        on_event({'type':'process.started','pid':p.pid,'processGroup':p.pid,'role':role})
         output='';usage=None;session=None;error=None;buffer=b'';total=0
         try:
             if cancelled():raise InterruptedError('用户已停止')

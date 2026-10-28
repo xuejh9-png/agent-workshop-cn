@@ -1,0 +1,45 @@
+test_ancestor_symlink_rejected (test_file_tools.ScopeTests.test_ancestor_symlink_rejected) ... ok
+test_no_overwrite (test_file_tools.ScopeTests.test_no_overwrite) ... ok
+test_no_write_without_grant (test_file_tools.ScopeTests.test_no_write_without_grant) ... ok
+test_open_descriptor_survives_ancestor_replacement (test_file_tools.ScopeTests.test_open_descriptor_survives_ancestor_replacement) ... ok
+test_read_create_real_text (test_file_tools.ScopeTests.test_read_create_real_text) ... ok
+test_reject_escape_hidden_and_binary (test_file_tools.ScopeTests.test_reject_escape_hidden_and_binary) ... ok
+test_root_symlink_rejected (test_file_tools.ScopeTests.test_root_symlink_rejected) ... ok
+test_size_limit (test_file_tools.ScopeTests.test_size_limit) ... ok
+test_symlink_and_hardlink_files_rejected (test_file_tools.ScopeTests.test_symlink_and_hardlink_files_rejected) ... ok
+test_cancel_waits_worker_and_keeps_state (test_studio.StudioTests.test_cancel_waits_worker_and_keeps_state) ... ok
+test_cross_workspace_parent_rejected (test_studio.StudioTests.test_cross_workspace_parent_rejected) ... ok
+test_direct_answer_one_model_no_files (test_studio.StudioTests.test_direct_answer_one_model_no_files) ... ok
+test_effort_rejected (test_studio.StudioTests.test_effort_rejected) ... ok
+test_explicit_model_and_effort_override (test_studio.StudioTests.test_explicit_model_and_effort_override) ... ok
+test_history_only_parent_chain (test_studio.StudioTests.test_history_only_parent_chain) ... ok
+test_model_failure_is_persisted (test_studio.StudioTests.test_model_failure_is_persisted) ... ok
+test_one_active_task (test_studio.StudioTests.test_one_active_task) ... ok
+test_restart_marks_interrupted_without_retry (test_studio.StudioTests.test_restart_marks_interrupted_without_retry) ... ok
+test_unsupported_engine_rejected (test_studio.StudioTests.test_unsupported_engine_rejected) ... ok
+test_unverified_or_unknown_model_no_call (test_studio.StudioTests.test_unverified_or_unknown_model_no_call) ... ok
+test_write_scope_is_per_run (test_studio.StudioTests.test_write_scope_is_per_run) ... ok
+test_cancel_keeps_completed_step_and_marks_stopped_step (test_v12.V12Tests.test_cancel_keeps_completed_step_and_marks_stopped_step) ... ok
+test_conversation_cannot_be_reused_across_projects (test_v12.V12Tests.test_conversation_cannot_be_reused_across_projects) ... ok
+test_conversation_paging_is_isolated (test_v12.V12Tests.test_conversation_paging_is_isolated) ... ok
+test_delegate_without_allowed_employees_blocks_without_call (test_v12.V12Tests.test_delegate_without_allowed_employees_blocks_without_call) ... ok
+test_later_failure_keeps_earlier_step_output (test_v12.V12Tests.test_later_failure_keeps_earlier_step_output) ... ok
+test_legacy_run_migrates_into_conversation (test_v12.V12Tests.test_legacy_run_migrates_into_conversation) ... ok
+test_manager_cannot_plan_unallowed_employee (test_v12.V12Tests.test_manager_cannot_plan_unallowed_employee) ... ok
+test_manager_direct_answer_uses_one_call (test_v12.V12Tests.test_manager_direct_answer_uses_one_call) ... ok
+test_migration_is_idempotent (test_v12.V12Tests.test_migration_is_idempotent) ... ok
+test_plan_over_four_steps_rejected_before_any_employee (test_v12.V12Tests.test_plan_over_four_steps_rejected_before_any_employee) ... ok
+test_progress_returns_only_changed_runs (test_v12.V12Tests.test_progress_returns_only_changed_runs) ... ok
+test_request_fields_cannot_override_settings (test_v12.V12Tests.test_request_fields_cannot_override_settings) ... ok
+test_request_nonce_is_idempotent (test_v12.V12Tests.test_request_nonce_is_idempotent) ... ok
+test_run_for_rejects_other_project_and_unknown (test_v12.V12Tests.test_run_for_rejects_other_project_and_unknown) ... ok
+test_settings_reject_unverified_model_and_unsupported_host (test_v12.V12Tests.test_settings_reject_unverified_model_and_unsupported_host) ... ok
+test_settings_revision_conflict_leaves_store_untouched (test_v12.V12Tests.test_settings_revision_conflict_leaves_store_untouched) ... ok
+test_settings_save_bumps_revision_and_is_durable (test_v12.V12Tests.test_settings_save_bumps_revision_and_is_durable) ... ok
+test_step_messages_have_stable_sequence_and_no_duplicates (test_v12.V12Tests.test_step_messages_have_stable_sequence_and_no_duplicates) ... ok
+test_unsupported_manager_host_rejected_on_start (test_v12.V12Tests.test_unsupported_manager_host_rejected_on_start) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 0.388s
+
+OK

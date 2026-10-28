@@ -11,6 +11,20 @@ ROUTE_SCHEMA={'type':'object','properties':{'route':{'type':'string','enum':['an
 ROUTE_SCHEMA['properties']['tasks']={'type':'array','maxItems':4,'items':{'type':'object','properties':{'employee':{'type':'string','enum':['codex','claude','workbuddy']},'task':{'type':'string','maxLength':12000}},'required':['employee','task'],'additionalProperties':False}}
 ROUTE_SCHEMA['required'].append('tasks')
 
+BUNDLED_CODEX='/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex'
+
+def codex_binary():
+    # A GUI-launched shell often lacks the CLI on PATH. Resolve once, explicitly,
+    # instead of silently reporting "not installed" while the CLI exists.
+    override=os.environ.get('STUDIO_CODEX_BIN')
+    if override:
+        if not os.access(override,os.X_OK):raise RuntimeError('STUDIO_CODEX_BIN 指向的文件不可执行')
+        return override
+    found=shutil.which('codex')
+    if found:return found
+    if os.access(BUNDLED_CODEX,os.X_OK):return BUNDLED_CODEX
+    raise RuntimeError('未安装 Codex CLI')
+
 class CodexAdapter:
     def __init__(self, data):
         self.data=Path(data);self.processes={};self.lock=threading.RLock();self.catalog_cache=None
@@ -18,8 +32,8 @@ class CodexAdapter:
 
     def catalog(self,refresh=False):
         if self.catalog_cache and not refresh:return self.catalog_cache
-        if not shutil.which('codex'):raise RuntimeError('未安装 Codex CLI')
-        p=subprocess.Popen(['codex','app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,start_new_session=True)
+        binary=codex_binary()
+        p=subprocess.Popen([binary,'app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,start_new_session=True)
         try:
             for msg in [{'id':1,'method':'initialize','params':{'clientInfo':{'name':'agent_studio','version':'0.2'},'capabilities':{'experimentalApi':True}}},{'method':'initialized'},{'id':2,'method':'model/list','params':{}}]:
                 p.stdin.write(json.dumps(msg)+'\n');p.stdin.flush()
@@ -46,7 +60,7 @@ class CodexAdapter:
     def account_identity(self):
         # Only an opaque account/configuration binding leaves this method. No
         # email, access token, auth file or private chat is read by the app.
-        p=subprocess.Popen(['codex','app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,start_new_session=True)
+        p=subprocess.Popen([codex_binary(),'app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,start_new_session=True)
         try:
             for msg in [{'id':1,'method':'initialize','params':{'clientInfo':{'name':'studio_identity','version':'1.2'}}},{'method':'initialized'},{'id':2,'method':'account/read','params':{'refreshToken':False}}]:
                 p.stdin.write((json.dumps(msg)+'\n').encode());p.stdin.flush()
@@ -94,7 +108,7 @@ class CodexAdapter:
         if p:self.terminate(p)
 
     def call(self, run_id, model, effort, prompt, cwd, on_event, cancelled, coordinator=False, writable=False):
-        cmd=['codex','exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','-C',str(cwd),'-m',model,'--json']
+        cmd=[codex_binary(),'exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','-C',str(cwd),'-m',model,'--json']
         overrides={'features.shell_tool':False,'features.apply_patch_freeform':False,'web_search':'disabled','model_reasoning_effort':effort,'features.multi_agent':False,'features.apps':False,'features.hooks':False,'features.plugins':False,'features.remote_plugin':False,'features.browser_use':False,'features.browser_use_external':False,'features.computer_use':False,'features.in_app_browser':False,'features.image_generation':False,'features.view_image':False,'model_provider':'studio_https','model_providers.studio_https.name':'OpenAI HTTPS','model_providers.studio_https.wire_api':'responses','model_providers.studio_https.requires_openai_auth':True,'model_providers.studio_https.supports_websockets':False}
         audit=self.data/(run_id+'.audit.jsonl')
         if coordinator:cmd+=['--output-schema',str(self.schema)]

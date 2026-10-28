@@ -1,0 +1,308 @@
+"""Deterministic v1.2 tests: ownership, step persistence, settings, migration.
+
+These do not replace the original M2 suite; they cover the v1.2 code paths that
+the handoff review flagged (out-of-order reads, /api/run ownership, per-step
+durability) without any real model call.
+"""
+import copy, json, tempfile, threading, time, unittest, uuid
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from server import Studio
+from v12 import Projects
+
+MANAGER = 'test-model-a'
+EMPLOYEE = 'test-model-b'
+UNVERIFIED = 'test-model-c'
+KEY = 'codex:acct-test:cfg-test:'
+
+
+class FakeV12:
+    """Scripted adapter. responses: dict|str|Exception, consumed per call."""
+
+    def __init__(self):
+        self.calls = []
+        self.responses = []
+        self.block_at = None
+        self.blocked = threading.Event()
+
+    def catalog(self, refresh=False):
+        return [{'id': MANAGER, 'efforts': ['low']},
+                {'id': EMPLOYEE, 'efforts': ['low', 'high']},
+                {'id': UNVERIFIED, 'efforts': ['low']}]
+
+    def account_identity(self):
+        return {'accountId': 'acct-test', 'configId': 'cfg-test'}
+
+    def cancel(self, ident):
+        pass
+
+    def call(self, ident, model, effort, prompt, cwd, event, cancelled,
+             coordinator=False, writable=False):
+        self.calls.append({'model': model, 'effort': effort, 'coordinator': coordinator,
+                           'writable': writable, 'prompt': prompt})
+        if self.block_at is not None and len(self.calls) == self.block_at:
+            self.blocked.set()
+            while not cancelled():
+                time.sleep(.01)
+            raise InterruptedError('stopped')
+        item = self.responses.pop(0) if self.responses else {
+            'route': 'answer', 'answer': '经理直接答复', 'tasks': [], 'task': '', 'reason': ''}
+        if isinstance(item, BaseException):
+            raise item
+        text = item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+        return {'text': text, 'usage': {'input_tokens': 10, 'output_tokens': 3},
+                'sessionId': 'sess-' + str(len(self.calls)), 'requestedModel': model,
+                'actualModel': None, 'role': 'coordinator' if coordinator else 'executor'}
+
+
+def settings_v2():
+    return {'schemaVersion': 2, 'revision': 0, 'productName': 'Agent Studio',
+            'managerHost': 'codex',
+            'managerModelByHost': {'codex': {'model': MANAGER, 'effort': 'low'}},
+            'employeeProfilesByHost': {'codex': {'enabled': True, 'model': EMPLOYEE, 'effort': 'high'}},
+            'reviewPolicy': {'enabled': False}, 'updatedAt': 'test'}
+
+
+def delegate(*tasks):
+    return {'route': 'delegate', 'answer': '安排给员工', 'reason': '测试',
+            'task': '', 'tasks': [{'employee': e, 'task': t} for e, t in tasks]}
+
+
+class V12Tests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.app = Studio(Path(self.temp.name) / 'app')
+        self.fake = FakeV12()
+        self.app.adapter = self.fake
+        self.pid = self.app.store.all('project')[0]['id']
+        self.app.store.put('settings', 'v2', settings_v2())
+        self.app.store.put('settings', 'verified_v2', {
+            KEY + MANAGER: {'at': 'test'}, KEY + EMPLOYEE: {'at': 'test'}})
+
+    def tearDown(self):
+        for ident in list(self.app.workers):
+            run = self.app.store.get('run', ident)
+            if run and run['status'] not in ('completed', 'cancelled', 'failed', 'interrupted', 'blocked'):
+                self.app.cancel(ident)
+        self.app.store.db.close()
+        self.temp.cleanup()
+
+    # --- helpers ---------------------------------------------------------
+    def start(self, **kw):
+        body = {'schemaVersion': 2, 'projectId': self.pid, 'conversationId': None,
+                'text': '你好', 'managerHost': 'codex', 'allowedEmployees': [],
+                'allowWrite': False, 'requestId': uuid.uuid4().hex}
+        body.update(kw)
+        return self.app.start_v12(body)
+
+    def wait(self, ident):
+        self.app.workers[ident].join(5)
+        return self.app.store.get('run', ident)
+
+    # --- manager behaviour ----------------------------------------------
+    def test_manager_direct_answer_uses_one_call(self):
+        run = self.wait(self.start()['id'])
+        self.assertEqual(run['route'], 'answer')
+        self.assertEqual(len(self.fake.calls), 1)
+        self.assertEqual(run['steps'], [])
+        page = self.app.projects.page(run['conversationId'])
+        self.assertEqual([m['role'] for m in page['messages']], ['user', 'assistant'])
+        self.assertEqual(page['messages'][1]['text'], '经理直接答复')
+
+    def test_delegate_without_allowed_employees_blocks_without_call(self):
+        self.fake.responses = [delegate(('codex', '读一下资料'))]
+        run = self.wait(self.start()['id'])
+        self.assertEqual(run['status'], 'blocked')
+        self.assertEqual(len(self.fake.calls), 1)
+        self.assertIn('没有授权', run['answer'])
+
+    def test_manager_cannot_plan_unallowed_employee(self):
+        self.fake.responses = [delegate(('claude', '去外部逛一圈'))]
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        self.assertEqual(run['status'], 'failed')
+        self.assertEqual(len(self.fake.calls), 1)
+        self.assertIn('未被本次授权', run['error'])
+
+    def test_plan_over_four_steps_rejected_before_any_employee(self):
+        self.fake.responses = [delegate(*[('codex', '第%d步' % i) for i in range(5)])]
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        self.assertEqual(run['status'], 'failed')
+        self.assertEqual(len(self.fake.calls), 1)
+
+    # --- per-step durability --------------------------------------------
+    def test_later_failure_keeps_earlier_step_output(self):
+        self.fake.responses = [delegate(('codex', '第一件事'), ('codex', '第二件事')),
+                               '第一件事的结果', RuntimeError('第二步模型失败')]
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        self.assertEqual(run['status'], 'failed')
+        self.assertEqual([s['status'] for s in run['steps']], ['completed', 'failed'])
+        self.assertEqual(run['steps'][0]['text'], '第一件事的结果')
+        self.assertIn('第二步模型失败', run['steps'][1]['error'])
+        self.assertEqual(run['answer'], '第一件事的结果')
+        page = self.app.projects.page(run['conversationId'])
+        steps = [m for m in page['messages'] if m.get('step')]
+        self.assertEqual([m['step'] for m in steps], [1, 2])
+        self.assertEqual(steps[0]['text'], '第一件事的结果')
+        # The aggregate run message must not duplicate content carried by steps.
+        self.assertEqual([m for m in page['messages'] if m['role'] == 'assistant' and not m.get('step')][0]['text'], '')
+
+    def test_cancel_keeps_completed_step_and_marks_stopped_step(self):
+        self.fake.responses = [delegate(('codex', '第一件事'), ('codex', '第二件事')), '第一件事的结果']
+        self.fake.block_at = 3
+        run = self.start(allowedEmployees=['codex'])
+        self.assertTrue(self.fake.blocked.wait(5))
+        cancelled = self.app.cancel(run['id'])
+        self.assertEqual(cancelled['status'], 'cancelled')
+        stored = self.app.store.get('run', run['id'])
+        self.assertEqual([s['status'] for s in stored['steps']], ['completed', 'cancelled'])
+        self.assertEqual(stored['steps'][0]['text'], '第一件事的结果')
+        self.assertIn('第一件事的结果', stored['answer'])
+
+    def test_step_messages_have_stable_sequence_and_no_duplicates(self):
+        self.fake.responses = [delegate(('codex', '一'), ('codex', '二')), '结果一', '结果二']
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        page = self.app.projects.page(run['conversationId'])
+        sequences = [m['sequence'] for m in page['messages']]
+        self.assertEqual(sequences, sorted(sequences))
+        self.assertEqual(len(sequences), len(set(sequences)))
+        self.assertEqual([m['id'] for m in page['messages'] if m.get('step')],
+                         [run['id'] + ':step:1', run['id'] + ':step:2'])
+        self.assertIn('任务1：', run['answer'])
+        self.assertIn('任务2：', run['answer'])
+        # Reading the page twice must not append records.
+        before = len(self.app.projects.messages(run['conversationId']))
+        self.app.projects.page(run['conversationId'])
+        self.assertEqual(before, len(self.app.projects.messages(run['conversationId'])))
+
+    # --- /api/run ownership ---------------------------------------------
+    def test_run_for_rejects_other_project_and_unknown(self):
+        run = self.wait(self.start()['id'])
+        other = self.app.projects.create_project('另一个项目')
+        self.assertEqual(self.app.run_for(run['id'], self.pid)['id'], run['id'])
+        with self.assertRaises(ValueError):
+            self.app.run_for(run['id'], other['id'])
+        with self.assertRaises(ValueError):
+            self.app.run_for('missing', self.pid)
+        with self.assertRaises(ValueError):
+            self.app.run_for(run['id'], 'no-such-project')
+        # legacy run without projectId still resolves through its workspace
+        legacy = {'id': 'legacy', 'workspace': self.pid, 'status': 'completed'}
+        self.app.store.put('run', 'legacy', legacy)
+        self.assertEqual(self.app.run_for('legacy', self.pid)['id'], 'legacy')
+
+    def test_conversation_cannot_be_reused_across_projects(self):
+        first = self.wait(self.start()['id'])
+        other = self.app.projects.create_project('项目B')
+        with self.assertRaises(ValueError):
+            self.start(projectId=other['id'], conversationId=first['conversationId'])
+
+    # --- progress and paging --------------------------------------------
+    def test_progress_returns_only_changed_runs(self):
+        run = self.wait(self.start()['id'])
+        fresh = self.app.progress(run['conversationId'], self.pid, {})
+        self.assertEqual([r['id'] for r in fresh['runs']], [run['id']])
+        version = run['version']
+        again = self.app.progress(run['conversationId'], self.pid, {run['id']: version})
+        self.assertEqual(again['runs'], [])
+        with self.assertRaises(ValueError):
+            self.app.progress(run['conversationId'], self.pid, {run['id']: 'x'})
+        with self.assertRaises(ValueError):
+            self.app.progress('nope', self.pid, {})
+
+    def test_conversation_paging_is_isolated(self):
+        first = self.wait(self.start(text='第一个对话')['id'])
+        second = self.wait(self.start(text='第二个对话')['id'])
+        self.assertNotEqual(first['conversationId'], second['conversationId'])
+        page = self.app.projects.page(first['conversationId'])
+        self.assertEqual(page['conversation']['id'], first['conversationId'])
+        self.assertTrue(all(m['conversationId'] == first['conversationId'] for m in page['messages']))
+        self.assertEqual([m['text'] for m in page['messages'] if m['role'] == 'user'], ['第一个对话'])
+        head = self.app.projects.page(first['conversationId'], limit=1)
+        self.assertEqual(len(head['messages']), 1)
+        self.assertEqual(head['before'], 2)
+        older = self.app.projects.page(first['conversationId'], head['before'], limit=1)
+        self.assertEqual(older['messages'][0]['role'], 'user')
+
+    # --- settings --------------------------------------------------------
+    def test_settings_save_bumps_revision_and_is_durable(self):
+        saved = self.app.config.save(copy.deepcopy(self.app.config.get()))
+        self.assertEqual(saved['revision'], 1)
+        self.assertEqual(self.app.config.get()['revision'], 1)
+
+    def test_settings_revision_conflict_leaves_store_untouched(self):
+        stale = copy.deepcopy(self.app.config.get())
+        body = copy.deepcopy(stale)
+        body['managerModelByHost']['codex'] = {'model': EMPLOYEE, 'effort': 'high'}
+        self.app.config.save(body)
+        with self.assertRaises(ValueError):
+            self.app.config.save(stale)
+        stored = self.app.config.get()
+        self.assertEqual(stored['revision'], 1)
+        self.assertEqual(stored['managerModelByHost']['codex']['model'], EMPLOYEE)
+
+    def test_settings_reject_unverified_model_and_unsupported_host(self):
+        body = copy.deepcopy(self.app.config.get())
+        body['managerModelByHost']['codex'] = {'model': UNVERIFIED, 'effort': 'low'}
+        with self.assertRaises(ValueError):
+            self.app.config.save(body)
+        body = copy.deepcopy(self.app.config.get())
+        body['employeeProfilesByHost']['claude'] = {'enabled': False, 'model': None, 'effort': 'low'}
+        with self.assertRaises(ValueError):
+            self.app.config.save(body)
+        body = copy.deepcopy(self.app.config.get())
+        body['reviewPolicy'] = {'enabled': True}
+        with self.assertRaises(ValueError):
+            self.app.config.save(body)
+        self.assertEqual(self.app.config.get()['revision'], 0)
+
+    def test_unsupported_manager_host_rejected_on_start(self):
+        with self.assertRaises(ValueError):
+            self.start(managerHost='claude')
+        with self.assertRaises(ValueError):
+            self.start(allowedEmployees=['workbuddy'])
+
+    def test_request_fields_cannot_override_settings(self):
+        with self.assertRaises(ValueError):
+            self.start(model='test-model-b')
+        with self.assertRaises(ValueError):
+            self.start(schemaVersion=1)
+
+    def test_request_nonce_is_idempotent(self):
+        body = {'schemaVersion': 2, 'projectId': self.pid, 'conversationId': None,
+                'text': '同一条请求', 'managerHost': 'codex', 'allowedEmployees': [],
+                'allowWrite': False, 'requestId': 'fixed-nonce-1'}
+        first = self.app.start_v12(body)
+        self.wait(first['id'])
+        replay = self.app.start_v12(dict(body))
+        self.assertEqual(replay['id'], first['id'])
+        self.assertEqual(len([r for r in self.app.store.all('run') if r['id'] == first['id']]), 1)
+        with self.assertRaises(ValueError):
+            self.app.start_v12({**body, 'text': '换了内容'})
+
+    # --- migration -------------------------------------------------------
+    def test_migration_is_idempotent(self):
+        self.wait(self.start()['id'])
+        counts = {k: len(self.app.store.all(k)) for k in
+                  ('project', 'conversation', 'message', 'run_link')}
+        Projects(self.app)
+        again = {k: len(self.app.store.all(k)) for k in
+                 ('project', 'conversation', 'message', 'run_link')}
+        self.assertEqual(counts, again)
+
+    def test_legacy_run_migrates_into_conversation(self):
+        legacy = {'id': 'legacy-run', 'workspace': self.pid, 'text': '旧问题', 'answer': '旧回答',
+                  'created': '2026-01-01T00:00:00+0800', 'status': 'completed', 'parent': None}
+        self.app.store.put('run', 'legacy-run', legacy)
+        Projects(self.app)
+        link = self.app.store.get('run_link', 'legacy-run')
+        self.assertEqual(link['projectId'], self.pid)
+        messages = self.app.projects.messages(link['conversationId'])
+        self.assertEqual([m['text'] for m in messages], ['旧问题', '旧回答'])
+        self.assertEqual(self.app.store.get('run', 'legacy-run'), legacy)
+        Projects(self.app)
+        self.assertEqual(len(self.app.projects.messages(link['conversationId'])), 2)
+
+
+if __name__ == '__main__':
+    unittest.main()

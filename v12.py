@@ -120,11 +120,25 @@ class Projects:
         conv=self.conversation(cid);allmessages=self.messages(cid)
         if before is not None:allmessages=[m for m in allmessages if m['sequence']<before]
         page=allmessages[-max(1,min(limit,100)):];runs={m['runId']:self.store.get('run',m['runId']) for m in page}
-        # Current run status/partial content are always read from the authoritative run.
+        # A step message keeps its own durable text; the run message only shows
+        # the aggregate when the manager answered directly (no employee steps).
         for m in page:
             r=runs.get(m['runId'])
-            if m['role']=='assistant' and r:m['text']=r.get('answer','');m['status']=r['status']
+            if m['role']=='assistant' and r:
+                if m.get('step'):
+                    steps={s['step']:s for s in r.get('steps') or []};s=steps.get(m['step'])
+                    m['text']=s.get('text','') if s else m.get('text','');m['status']=s.get('status') if s else r['status'];m['error']=s.get('error') if s else None
+                else:
+                    m['text']=r.get('answer','') if not r.get('steps') else '';m['status']=r['status']
         return {'conversation':conv,'messages':page,'runs':list(runs.values()),'before':page[0]['sequence'] if len(allmessages)>len(page) else None}
+    def step_message(self,run,record):
+        cid=run['conversationId'];mid=run['id']+':step:'+str(record['step']);existing=self.store.get('message',mid)
+        if existing:
+            existing.update(text=record.get('text',''),status=record.get('status'),error=record.get('error'),employee=record.get('employee'))
+            self.store.put('message',mid,existing);return existing
+        seq=max((m['sequence'] for m in self.messages(cid)),default=0)+1
+        value={'id':mid,'conversationId':cid,'projectId':run['workspace'],'runId':run['id'],'role':'assistant','step':record['step'],'employee':record.get('employee'),'requestedModel':record.get('requestedModel'),'text':record.get('text',''),'status':record.get('status'),'error':record.get('error'),'sequence':seq}
+        self.store.put('message',mid,value);return value
     def attach(self,run):
         cid=run['conversationId'];conv=self.conversation(cid,run['workspace']);messages=self.messages(cid);seq=max((m['sequence'] for m in messages),default=0)
         records=[('run_link',run['id'],{'runId':run['id'],'conversationId':cid,'projectId':run['workspace']})]

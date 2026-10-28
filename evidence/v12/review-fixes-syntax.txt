@@ -1,0 +1,2 @@
+node --check app.js: OK
+py_compile server/v12/runtime/file_tools: OK

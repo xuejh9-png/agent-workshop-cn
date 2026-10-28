@@ -4,7 +4,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 const filePath = name => encodeURIComponent(name).replace(/'/g,'%27');
 const token = document.querySelector('meta[name="studio-token"]')?.content;
 const terminal = new Set(['completed','failed','cancelled','interrupted']);
-const statuses = {running:'正在处理',completed:'已完成',failed:'执行失败',cancelled:'已停止',interrupted:'执行中断'};
+const statuses = {running:'正在处理',completed:'已结束',failed:'执行失败',cancelled:'已停止',interrupted:'执行中断'};
 const state = {workspaces:[],runs:[],models:[],verified:{},settings:{},workspace:null,active:null,engine:'auto',model:null,effort:null,attachments:[],loading:true};
 const mark = '<span class="brand-mark"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 23V11l10-6 10 6v12l-10 6-10-6Z"/><path d="m6 11 10 6 10-6M16 17v12M11 14l10-6"/></svg></span>';
 let pollTimer,toastTimer,drawerFocus,settingsTab='models';

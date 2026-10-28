@@ -53,7 +53,11 @@ class StudioTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.start()
         self.app.cancel(r['id'])
     def test_write_scope_is_per_run(self):
-        self.wait(self.start(engine='codex',allowWrite=True)['id']);self.wait(self.start(engine='codex')['id']);self.assertTrue(self.fake.calls[0][3]);self.assertFalse(self.fake.calls[1][3])
+        self.wait(self.start(engine='codex',allowWrite=True)['id']);self.wait(self.start(engine='codex')['id']);self.assertTrue(self.fake.calls[0][3]);self.assertFalse(self.fake.calls[1][3]);self.assertIn('后端已批准本次',self.fake.calls[0][4]);self.assertIn('本次只读',self.fake.calls[1][4])
+    def test_model_failure_is_persisted(self):
+        def fail(*args,**kwargs):raise RuntimeError('模型调用失败测试')
+        self.fake.call=fail
+        run=self.wait(self.start()['id']);self.assertEqual(run['status'],'failed');self.assertIn('模型调用失败',run['error']);self.assertIsNotNone(run['ended'])
     def test_restart_marks_interrupted_without_retry(self):
         record={'id':'old','status':'running','created':'test'};self.app.store.put('run','old',record)
         restarted=Studio(Path(self.temp.name)/'app');self.assertEqual(restarted.store.get('run','old')['status'],'interrupted');restarted.store.db.close()

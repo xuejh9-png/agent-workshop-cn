@@ -616,6 +616,8 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
 .answer-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.85}.answer-meta{font-size:11px;color:var(--text-3);margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}.answer-meta button{font-size:11px;color:var(--text-2)}
 .status-note{font-size:13px;color:var(--text-2);margin-top:8px}.error-note{background:var(--err-soft);color:var(--err);padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap}.file-evidence{padding:10px 0;font-size:12px;color:var(--text-2)}.file-evidence button{color:var(--accent);padding:5px 7px;border:1px solid var(--border);border-radius:6px;margin-right:6px}
 .settings-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}.settings-tabs button{font-size:12px;padding:7px 10px;background:var(--canvas);border-radius:6px}.settings-tabs button.active{background:var(--accent-soft);color:var(--accent)}.model-test-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}.model-test-row strong{font-size:13px}.model-test-row small{display:block;color:var(--text-2);font-size:11px}.setting-row input[type=checkbox]{width:auto}.write-permission{font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:6px;padding:3px 12px 9px}.write-permission input{accent-color:var(--accent)}.help-block{font-size:12px;color:var(--text-2);line-height:1.8;padding:12px 0}.new-space{display:flex;gap:8px;margin-top:18px}.new-space input{min-width:0;flex:1;background:var(--canvas);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:7px}.kv{line-height:1.8}.topbar-sub{font-size:11px}.busy{opacity:.7;pointer-events:none}
+
+.project-label{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 6px;color:var(--text-2);font-size:12px}.project-label button{font-size:18px;width:28px;height:28px}.project-row{display:flex;align-items:center;margin:2px 8px}.project-row .project-title{display:flex;align-items:center;gap:7px;padding:8px;flex:1;min-width:0;text-align:left;font-size:13px;border-radius:7px}.project-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-row.selected{background:var(--subtle);border-radius:7px}.project-row .rename{font-size:13px;color:var(--text-3);padding:7px}.project-children{margin-left:22px;border-left:1px solid var(--border);padding-left:4px}.project-children button{width:100%;text-align:left;padding:8px 10px;font-size:12px;color:var(--text-2);border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project-children button.active{color:var(--accent);background:var(--accent-soft)}.project-children button:hover,.project-title:hover{background:var(--subtle)}.project-tools{color:var(--text-3)!important;font-size:11px!important}.stream-note{font-size:10px;color:var(--text-3);margin-top:5px}.message-markdown p{margin:0 0 10px}.message-markdown code{font-family:ui-monospace,monospace;font-size:.9em;background:var(--canvas);padding:1px 4px;border-radius:3px}.message-markdown h3{font-size:15px;margin:14px 0 6px}.message-markdown ul{padding-left:20px}.message-markdown pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--canvas);padding:12px;border-radius:8px}.settings-feedback{font-size:12px;padding:10px 12px;line-height:1.6;border-radius:7px;white-space:pre-wrap}.settings-feedback:empty{display:none}.settings-feedback.error{background:var(--err-soft);color:var(--err)}.settings-feedback.success{background:var(--ok-soft);color:var(--ok)}.employee-choice{display:flex;gap:10px;align-items:flex-start;padding:10px;font-size:13px;min-height:44px}.employee-choice input{margin-top:5px;accent-color:var(--accent)}.employee-choice small{display:block;color:var(--text-2);font-size:11px}.employee-choice.disabled{opacity:.55}.empty-sub{margin-bottom:24px}
 </style>
 </head>
 <body>
@@ -632,32 +634,14 @@ dialog::backdrop{background:rgba(20,20,25,.25);backdrop-filter:blur(2px)}.modal-
       </button>
     </div>
 
-    <button class="sb-ws" title="切换工作空间" onclick="workspaceDialog()">
-      <div class="sb-ws-face">h</div>
-      <div class="sb-ws-name">工作空间</div>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
-    </button>
-
     <div class="sb-new" onclick="newTask()" role="button" tabindex="0">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      新建任务
+      新建对话
     </div>
 
     <div class="sb-scroll"><div class="sb-label">正在读取本机记录…</div></div>
 
-    <div class="sb-foot">
-      <div class="sb-item" onclick="openSettings()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m6 8 4 4-4 4"/><path d="M13 16h5"/></svg>
-        <span class="t">执行器与模型</span>
-      </div>
-      <div class="sb-item" role="button" tabindex="0">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <span class="t">项目知识</span>
-      </div>
-      <div class="sb-item" role="button" tabindex="0">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span class="t">设置</span>
-      </div>
+    <div class="sb-foot"><button class="sb-item" style="width:100%" onclick="openSettings()"><span class="t">设置</span></button>
       <div class="sb-user">
         <div class="sb-user-face">h</div>
         <span class="sb-user-name">hao</span>

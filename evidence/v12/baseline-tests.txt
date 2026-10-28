@@ -1,0 +1,26 @@
+test_ancestor_symlink_rejected (test_file_tools.ScopeTests) ... ok
+test_no_overwrite (test_file_tools.ScopeTests) ... ok
+test_no_write_without_grant (test_file_tools.ScopeTests) ... ok
+test_open_descriptor_survives_ancestor_replacement (test_file_tools.ScopeTests) ... ok
+test_read_create_real_text (test_file_tools.ScopeTests) ... ok
+test_reject_escape_hidden_and_binary (test_file_tools.ScopeTests) ... ok
+test_root_symlink_rejected (test_file_tools.ScopeTests) ... ok
+test_size_limit (test_file_tools.ScopeTests) ... ok
+test_symlink_and_hardlink_files_rejected (test_file_tools.ScopeTests) ... ok
+test_cancel_waits_worker_and_keeps_state (test_studio.StudioTests) ... ok
+test_cross_workspace_parent_rejected (test_studio.StudioTests) ... ok
+test_direct_answer_one_model_no_files (test_studio.StudioTests) ... ok
+test_effort_rejected (test_studio.StudioTests) ... ok
+test_explicit_model_and_effort_override (test_studio.StudioTests) ... ok
+test_history_only_parent_chain (test_studio.StudioTests) ... ok
+test_model_failure_is_persisted (test_studio.StudioTests) ... ok
+test_one_active_task (test_studio.StudioTests) ... ok
+test_restart_marks_interrupted_without_retry (test_studio.StudioTests) ... ok
+test_unsupported_engine_rejected (test_studio.StudioTests) ... ok
+test_unverified_or_unknown_model_no_call (test_studio.StudioTests) ... ok
+test_write_scope_is_per_run (test_studio.StudioTests) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.161s
+
+OK

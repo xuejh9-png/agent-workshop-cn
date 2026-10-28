@@ -1,10 +1,15 @@
 """Local Codex CLI adapter: discovery, bounded processes, durable evidence."""
-import json, os, selectors, shutil, signal, subprocess, sys, threading, time
+import hashlib, json, os, selectors, shutil, signal, subprocess, sys, threading, time
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent
-TERMINAL={'completed','failed','cancelled','interrupted'}
+TERMINAL={'completed','failed','cancelled','interrupted','blocked'}
 ROUTE_SCHEMA={'type':'object','properties':{'route':{'type':'string','enum':['answer','delegate']},'answer':{'type':'string'},'task':{'type':'string'},'reason':{'type':'string'}},'required':['route','answer','task','reason'],'additionalProperties':False}
+
+# V1 schema remains accepted by the internal legacy bridge; new managers may
+# plan several sequential employees. No public request may invoke the bridge.
+ROUTE_SCHEMA['properties']['tasks']={'type':'array','maxItems':4,'items':{'type':'object','properties':{'employee':{'type':'string','enum':['codex','claude','workbuddy']},'task':{'type':'string','maxLength':12000}},'required':['employee','task'],'additionalProperties':False}}
+ROUTE_SCHEMA['required'].append('tasks')
 
 class CodexAdapter:
     def __init__(self, data):
@@ -37,6 +42,38 @@ class CodexAdapter:
             raise RuntimeError('模型目录请求超时')
         finally:
             self.terminate(p)
+
+    def account_identity(self):
+        # Only an opaque account/configuration binding leaves this method. No
+        # email, access token, auth file or private chat is read by the app.
+        p=subprocess.Popen(['codex','app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,start_new_session=True)
+        try:
+            for msg in [{'id':1,'method':'initialize','params':{'clientInfo':{'name':'studio_identity','version':'1.2'}}},{'method':'initialized'},{'id':2,'method':'account/read','params':{'refreshToken':False}}]:
+                p.stdin.write((json.dumps(msg)+'\n').encode());p.stdin.flush()
+            sel=selectors.DefaultSelector();sel.register(p.stdout,selectors.EVENT_READ);buf=b'';deadline=time.monotonic()+12
+            while time.monotonic()<deadline:
+                for key,_ in sel.select(.2):
+                    chunk=os.read(key.fileobj.fileno(),65536)
+                    if not chunk:raise RuntimeError('无法核对Codex登录身份')
+                    buf+=chunk
+                    while b'\n' in buf:
+                        line,buf=buf.split(b'\n',1);msg=json.loads(line)
+                        if msg.get('id')==2:
+                            account=msg.get('result',{}).get('account')
+                            if not account:raise RuntimeError('Codex未登录，请先在CLI完成登录')
+                            # A random local namespace prevents exposing a plain email hash.
+                            salt=self.data/'connection-namespace'
+                            if not salt.exists():
+                                import secrets
+                                try:
+                                    fd=os.open(salt,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+                                    with os.fdopen(fd,'w') as f:f.write(secrets.token_hex(32))
+                                except FileExistsError:pass
+                            namespace=salt.read_text()
+                            digest=hashlib.sha256((namespace+json.dumps(account,sort_keys=True)).encode()).hexdigest()
+                            return {'accountId':digest,'configId':'codex-studio-https-v1'}
+            raise RuntimeError('Codex登录身份核对超时')
+        finally:self.terminate(p)
 
     @staticmethod
     def terminate(p):
@@ -94,6 +131,9 @@ class CodexAdapter:
                         except ValueError:continue
                         kind=event.get('type','')
                         if kind=='thread.started':session=event.get('thread_id');on_event({'type':kind,'sessionId':session,'role':role})
+                        elif kind=='item.started':
+                            item=event.get('item',{})
+                            if item.get('type')=='mcp_tool_call':on_event({'type':'tool.started','tool':item.get('tool'),'server':item.get('server'),'role':role})
                         elif kind=='item.completed':
                             item=event.get('item',{});typ=item.get('type')
                             if typ=='agent_message':output=item.get('text','')[:150000]

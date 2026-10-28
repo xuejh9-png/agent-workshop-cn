@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Studio</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --canvas:#F8F8F7;
+  --surface:#FFFFFF;
+  --subtle:#EFEFEC;
+  --border:#E4E4E0;
+  --border-strong:#D6D6D1;
+  --text:#202124;
+  --text-2:#6E6E69;
+  --text-3:#9B9B95;
+  --accent:#7965D8;
+  --accent-hover:#6853CC;
+  --accent-soft:#F2EFFC;
+  --accent-border:#DCD4F7;
+  --ok:#3C8C67;
+  --ok-soft:#EAF4EE;
+  --warn:#A96A12;
+  --warn-soft:#FBF1E1;
+  --err:#BF4438;
+  --err-soft:#FBECEA;
+  --shadow-pop:0 8px 28px rgba(32,33,36,.10),0 2px 6px rgba(32,33,36,.05);
+  --shadow-drawer:-12px 0 40px rgba(32,33,36,.07);
+  --radius:12px;
+  --radius-sm:8px;
+}
+
+[data-theme="dark"]{
+  --canvas:#17181B;
+  --surface:#1E1F23;
+  --subtle:#26272C;
+  --border:#2F3036;
+  --border-strong:#3C3D44;
+  --text:#F2F2F2;
+  --text-2:#A5A6AB;
+  --text-3:#6E7076;
+  --accent:#9C8BE8;
+  --accent-hover:#B0A2EE;
+  --accent-soft:#282338;
+  --accent-border:#3E3559;
+  --ok:#5CAF86;
+  --ok-soft:#1D2C25;
+  --warn:#D2A052;
+  --warn-soft:#2E2619;
+  --err:#E07A70;
+  --err-soft:#31211F;
+  --shadow-pop:0 8px 28px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
+  --shadow-drawer:-12px 0 40px rgba(0,0,0,.45);
+}
+
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;
+  line-height:1.65;
+  color:var(--text);
+  background:var(--canvas);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  font-variant-numeric:tabular-nums;
+}
+
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer}
+textarea{font-family:inherit;font-size:inherit;color:inherit}
+svg{display:block;flex-shrink:0}
+::selection{background:var(--accent-soft);color:var(--text)}
+
+/* ─────────── shell ─────────── */
+.app{display:flex;height:100vh;height:100dvh}
+
+/* ─────────── sidebar ─────────── */
+.sidebar{
+  width:248px;flex-shrink:0;
+  background:var(--canvas);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transition:width .18s ease;
+  overflow:hidden;
+}
+.sidebar.collapsed{width:0;border-right-color:transparent}
+
+.sb-top{padding:14px 12px 6px;display:flex;align-items:center;gap:8px}
+.sb-brand{
+  font-size:13.5px;font-weight:600;letter-spacing:-.01em;
+  color:var(--text);flex:1;white-space:nowrap;padding-left:4px;
+}
+.sb-brand span{color:var(--text-3);font-weight:400}
+
+.sb-ws{
+  margin:6px 8px 2px;padding:7px 10px;
+  border-radius:var(--radius-sm);
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;transition:background .12s;
+  white-space:nowrap;
+}
+.sb-ws:hover{background:var(--subtle)}
+.sb-ws-face{
+  width:20px;height:20px;border-radius:5px;flex-shrink:0;
+  background:var(--text);color:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;
+}
+.sb-ws-name{font-size:13.5px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis}
+
+.sb-new{
+  margin:2px 8px 10px;padding:6px 10px;
+  border-radius:var(--radius-sm);
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--text-2);
+  cursor:pointer;transition:background .12s,color .12s;
+  white-space:nowrap;
+}
+.sb-new:hover{background:var(--subtle);color:var(--text)}
+
+.sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 8px}
+
+.sb-label{
+  font-size:11.5px;font-weight:500;color:var(--text-3);
+  padding:14px 10px 4px;white-space:nowrap;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sb-label button{font-size:11px;color:var(--text-3);padding:0 2px}
+.sb-label button:hover{color:var(--text-2)}
+
+.sb-item{
+  padding:6px 10px;border-radius:var(--radius-sm);
+  display:flex;align-items:center;gap:9px;
+  font-size:13px;color:var(--text-2);
+  cursor:pointer;transition:background .12s,color .12s;
+  white-space:nowrap;position:relative;
+}
+.sb-item:hover{background:var(--subtle);color:var(--text)}
+.sb-item.active{background:var(--surface);color:var(--text);font-weight:500;box-shadow:0 1px 2px rgba(32,33,36,.05)}
+.sb-item .t{flex:1;overflow:hidden;text-overflow:ellipsis}
+.sb-item .s{font-size:11.5px;color:var(--text-3);flex-shrink:0}
+
+.sb-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:var(--accent);
+}
+.sb-dot.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.sb-foot{
+  border-top:1px solid var(--border);
+  padding:8px 8px 10px;
+}
+.sb-foot .sb-item{padding:6px 10px}
+.sb-user{
+  margin-top:6px;padding:6px 10px;
+  display:flex;align-items:center;gap:8px;
+  border-radius:var(--radius-sm);cursor:pointer;
+  white-space:nowrap;
+}
+.sb-user:hover{background:var(--subtle)}
+.sb-user-face{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--text);color:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;flex-shrink:0;
+}
+.sb-user-name{font-size:12.5px;color:var(--text-2)}
+
+/* ─────────── main ─────────── */
+.main{flex:1;display:flex;flex-direction:column;background:var(--surface);min-width:0;position:relative}
+
+.topbar{
+  height:52px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  padding:0 20px;
+}
+.topbar-title{font-size:14px;font-weight:600;letter-spacing:-.005em}
+.topbar-sub{font-size:12.5px;color:var(--text-3);display:flex;align-items:center;gap:5px}
+.top-spacer{flex:1}
+
+.iconbtn{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-2);transition:background .12s,color .12s;
+}
+.iconbtn:hover{background:var(--subtle);color:var(--text)}
+.iconbtn.on{background:var(--subtle);color:var(--text)}
+.iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ─────────── scroll area ─────────── */
+.scroll{flex:1;overflow-y:auto;scroll-behavior:smooth}
+.thread{max-width:780px;margin:0 auto;padding:26px 24px 8px}
+
+.turn{display:flex;gap:12px;margin-bottom:28px}
+.turn-av{
+  width:26px;height:26px;border-radius:7px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:600;margin-top:1px;
+}
+.turn-av.coord{background:var(--accent);color:#fff}
+.turn-av.me{background:var(--subtle);color:var(--text-2)}
+.turn-body{flex:1;min-width:0}
+.turn-head{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+.turn-name{font-size:13px;font-weight:600}
+.turn-time{font-size:11.5px;color:var(--text-3)}
+.turn-text{font-size:14.5px;line-height:1.72;color:var(--text)}
+.turn-text p+p{margin-top:9px}
+.turn-text .em{color:var(--text);font-weight:500}
+.turn.me .turn-text{color:var(--text-2)}
+
+/* ─────────── run card ─────────── */
+.run{
+  margin-top:14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--surface);
+  overflow:hidden;
+}
+.run-head{
+  padding:11px 14px;
+  display:flex;align-items:center;gap:9px;
+  border-bottom:1px solid var(--border);
+  background:var(--canvas);
+}
+.run-state{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:var(--accent);
+}
+.run-state.pulse{animation:pulse 1.8s ease-in-out infinite}
+.run-state.ok{background:var(--ok)}
+.run-state.err{background:var(--err)}
+.run-title{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run-host{font-size:11.5px;color:var(--text-3);white-space:nowrap;display:flex;align-items:center;gap:4px}
+.run-chev{color:var(--text-3)}
+
+.run-steps{list-style:none;padding:8px 14px 10px}
+.run-step{
+  position:relative;
+  display:flex;align-items:flex-start;gap:10px;
+  padding:5px 0 5px 0;
+  font-size:13px;color:var(--text-2);
+}
+.run-step .node{
+  width:13px;height:13px;flex-shrink:0;margin-top:3px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-3);
+}
+.run-step.done{color:var(--text-2)}
+.run-step.done .node{color:var(--ok)}
+.run-step.now{color:var(--text);font-weight:500}
+.run-step.now .node{color:var(--accent)}
+.run-step .step-note{font-size:11.5px;color:var(--text-3);font-weight:400;margin-left:6px}
+.run-step .spin{animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.run-foot{
+  padding:8px 14px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  font-size:11.5px;color:var(--text-3);
+  background:var(--canvas);
+}
+.run-link{
+  color:var(--text-2);font-size:11.5px;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 0;transition:color .12s;
+}
+.run-link:hover{color:var(--accent)}
+
+/* ─────────── inline cards (approval / review / file) ─────────── */
+.card{
+  margin-top:14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.card-head{
+  padding:10px 14px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+  background:var(--canvas);
+}
+.card-title{font-size:12.5px;font-weight:600;flex:1}
+.card-body{padding:12px 14px;font-size:13px;color:var(--text-2);line-height:1.7}
+.card-acts{
+  padding:10px 14px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  background:var(--canvas);
+}
+.card-acts .spacer{flex:1}
+
+.pill{
+  font-size:11px;font-weight:500;
+  padding:2px 8px;border-radius:20px;
+  display:inline-flex;align-items:center;gap:4px;
+  white-space:nowrap;
+}
+.pill.wait{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.err{background:var(--err-soft);color:var(--err)}
+.pill.run{background:var(--accent-soft);color:var(--accent)}
+
+.btn{
+  height:30px;padding:0 12px;border-radius:var(--radius-sm);
+  font-size:12.5px;font-weight:500;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:background .12s,color .12s,border-color .12s,opacity .12s;
+  border:1px solid transparent;
+  white-space:nowrap;
+}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{color:var(--text-2);border-color:var(--border)}
+.btn-ghost:hover{background:var(--subtle);color:var(--text);border-color:var(--border-strong)}
+.btn-quiet{color:var(--text-3)}
+.btn-quiet:hover{color:var(--text-2);background:var(--subtle)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-sm{height:26px;font-size:12px;padding:0 10px}
+
+.kv{display:grid;grid-template-columns:78px 1fr;gap:5px 10px;font-size:12.5px}
+.kv dt{color:var(--text-3)}
+.kv dd{color:var(--text-2)}
+
+.filerow{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 14px;
+  border-top:1px solid var(--border);
+  font-size:12.5px;
+  cursor:pointer;transition:background .12s;
+}
+.filerow:hover{background:var(--canvas)}
+.filerow .fname{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filerow .fmeta{color:var(--text-3);font-size:11.5px}
+
+/* ─────────── composer ─────────── */
+.composer-wrap{
+  flex-shrink:0;
+  padding:12px 24px 16px;
+  background:var(--surface);
+  position:relative;
+}
+.composer{
+  max-width:780px;margin:0 auto;
+  border:1px solid var(--border-strong);
+  border-radius:14px;
+  background:var(--surface);
+  transition:border-color .15s,box-shadow .15s;
+  position:relative;
+}
+.composer:focus-within{
+  border-color:var(--accent-border);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+.composer.running{border-color:var(--accent-border)}
+
+.composer-field{
+  display:flex;align-items:flex-end;gap:8px;
+  padding:11px 12px 4px 14px;
+}
+.composer-field textarea{
+  flex:1;border:none;outline:none;background:none;resize:none;
+  font-size:14.5px;line-height:1.6;
+  min-height:23px;max-height:190px;
+  padding:0;
+}
+.composer-field textarea::placeholder{color:var(--text-3)}
+
+.send{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s,opacity .12s,transform .12s;
+}
+.send:hover{background:var(--accent-hover)}
+.send:disabled{background:var(--subtle);color:var(--text-3);cursor:default}
+.send.stop{background:var(--text);color:var(--surface)}
+.send.stop:hover{opacity:.85}
+
+.composer-bar{
+  display:flex;align-items:center;gap:4px;
+  padding:4px 8px 7px 10px;
+  flex-wrap:wrap;
+}
+
+.chip{
+  height:26px;padding:0 8px 0 7px;border-radius:7px;
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;color:var(--text-2);
+  transition:background .12s,color .12s;
+  border:1px solid transparent;
+  white-space:nowrap;max-width:280px;
+}
+.chip:hover{background:var(--subtle);color:var(--text)}
+.chip[aria-expanded="true"]{background:var(--subtle);color:var(--text);border-color:var(--border)}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chip .lbl{color:var(--text-3)}
+.chip .val{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.chip .caret{color:var(--text-3)}
+.chip.warn .val{color:var(--warn)}
+
+.bar-sep{width:1px;height:14px;background:var(--border);margin:0 3px}
+.bar-spacer{flex:1}
+.bar-ico{
+  width:26px;height:26px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-3);transition:background .12s,color .12s;
+}
+.bar-ico:hover{background:var(--subtle);color:var(--text-2)}
+.bar-ico:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.composer-hint{
+  max-width:780px;margin:7px auto 0;
+  display:flex;justify-content:space-between;
+  font-size:11px;color:var(--text-3);
+}
+.composer-hint kbd{
+  font-family:inherit;font-size:10.5px;
+  border:1px solid var(--border);border-radius:4px;
+  padding:0 4px;color:var(--text-3);
+}
+
+/* ─────────── popover ─────────── */
+.pop{
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:0;
+  width:340px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-pop);
+  padding:6px;
+  z-index:60;
+  display:none;
+  animation:popIn .12s ease;
+}
+.pop.open{display:block}
+@keyframes popIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.pop-head{
+  padding:6px 8px 8px;
+  font-size:11.5px;color:var(--text-3);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.pop-head button{font-size:11.5px;color:var(--text-3);display:inline-flex;align-items:center;gap:4px}
+.pop-head button:hover{color:var(--accent)}
+
+.opt{
+  display:flex;align-items:flex-start;gap:9px;
+  padding:8px 9px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:background .1s;
+  position:relative;
+}
+.opt:hover:not(.disabled){background:var(--subtle)}
+.opt.disabled{cursor:not-allowed;opacity:.55}
+.opt-ico{color:var(--text-2);margin-top:2px}
+.opt.disabled .opt-ico{color:var(--text-3)}
+.opt-main{flex:1;min-width:0}
+.opt-name{font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+.opt-sub{font-size:11.5px;color:var(--text-3);margin-top:1px;line-height:1.5}
+.opt-right{display:flex;align-items:center;gap:5px;margin-top:2px;color:var(--accent)}
+.opt-sep{height:1px;background:var(--border);margin:5px 8px}
+
+.badge{
+  font-size:10.5px;padding:1px 6px;border-radius:10px;
+  font-weight:500;
+}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.wait{background:var(--warn-soft);color:var(--warn)}
+.badge.err{background:var(--err-soft);color:var(--err)}
+.badge.off{background:var(--subtle);color:var(--text-3)}
+
+/* ─────────── drawer ─────────── */
+.drawer{
+  position:absolute;top:0;right:0;bottom:0;
+  width:372px;max-width:88vw;
+  background:var(--surface);
+  border-left:1px solid var(--border);
+  box-shadow:var(--shadow-drawer);
+  transform:translateX(100%);
+  transition:transform .22s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  z-index:50;
+}
+.drawer.open{transform:translateX(0)}
+.drawer-head{
+  height:52px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  padding:0 14px 0 18px;
+}
+.drawer-title{font-size:13.5px;font-weight:600;flex:1}
+.drawer-body{flex:1;overflow-y:auto;padding:16px 18px 28px}
+.drawer-sec{margin-bottom:22px}
+.drawer-sec h4{
+  font-size:11.5px;font-weight:500;color:var(--text-3);
+  margin-bottom:8px;
+}
+.drawer-sec .kv{grid-template-columns:88px 1fr}
+
+.log{
+  font-size:11.5px;line-height:1.75;
+  color:var(--text-2);
+  border-left:1px solid var(--border);
+  padding-left:12px;
+  margin-left:2px;
+}
+.log div{position:relative;padding:1px 0}
+.log div::before{
+  content:'';position:absolute;left:-15px;top:9px;
+  width:5px;height:5px;border-radius:50%;background:var(--border-strong);
+}
+.log .t{color:var(--text-3);margin-right:8px}
+.log .ok::before{background:var(--ok)}
+.log .now::before{background:var(--accent)}
+
+/* ─────────── empty state ─────────── */
+.empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:24px 24px 40px;
+}
+.empty-inner{width:100%;max-width:640px}
+.empty-title{
+  font-size:30px;font-weight:600;letter-spacing:-.02em;
+  text-align:center;margin-bottom:8px;
+}
+.empty-sub{
+  font-size:14px;color:var(--text-3);text-align:center;margin-bottom:34px;
+}
+.recent-title{
+  font-size:11.5px;color:var(--text-3);
+  margin:34px 0 6px;padding-left:2px;
+}
+.recent-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:background .12s;
+  font-size:13px;
+}
+.recent-item:hover{background:var(--canvas)}
+.recent-item .rname{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-item .rmeta{font-size:11.5px;color:var(--text-3)}
+
+/* ─────────── demo tag ─────────── */
+.demo-tag{
+  position:fixed;right:14px;bottom:12px;
+  font-size:10.5px;font-weight:500;letter-spacing:.02em;
+  color:var(--warn);background:var(--warn-soft);
+  border:1px solid rgba(169,106,18,.16);
+  padding:3px 9px;border-radius:20px;
+  z-index:200;pointer-events:none;
+}
+[data-theme="dark"] .demo-tag{border-color:rgba(210,160,82,.2)}
+
+/* ─────────── scrollbar ─────────── */
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:transparent;border-radius:5px;border:2px solid transparent;background-clip:content-box}
+*:hover::-webkit-scrollbar-thumb{background:var(--border-strong);background-clip:content-box}
+
+/* ─────────── responsive ─────────── */
+@media (max-width:1024px){
+  .sidebar{width:212px}
+  .thread{max-width:100%}
+}
+@media (max-width:860px){
+  .sidebar{position:absolute;left:0;top:0;bottom:0;z-index:70;box-shadow:var(--shadow-pop)}
+  .sidebar.collapsed{box-shadow:none}
+  #expandBtn{display:flex !important}
+}
+@media (max-width:768px){
+  .thread{padding:18px 16px 4px}
+  .composer-wrap{padding:10px 12px 12px}
+  .turn-text{font-size:14px}
+  .drawer{width:100%;max-width:100%}
+  .empty-title{font-size:23px}
+  .pop{width:calc(100vw - 48px);left:-4px}
+  .composer-hint{display:none}
+  .topbar{padding:0 12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════ SIDEBAR ══════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">Agent Studio <span>v0.1</span></div>
+      <button class="iconbtn" id="collapseBtn" title="收起侧栏" aria-label="收起侧栏">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
+      </button>
+    </div>
+
+    <div class="sb-ws" title="切换工作空间">
+      <div class="sb-ws-face">h</div>
+      <div class="sb-ws-name">hao 的工作空间</div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+    </div>
+
+    <div class="sb-new" onclick="newTask()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      新建工作空间
+    </div>
+
+    <div class="sb-scroll">
+      <div class="sb-label">最近任务</div>
+
+      <div class="sb-item active" onclick="openTask('settlement')">
+        <span class="sb-dot pulse"></span>
+        <span class="t">结算说明文初稿</span>
+      </div>
+      <div class="sb-item" onclick="openTask('growth')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <span class="t">用户增长复盘</span>
+        <span class="s">昨天</span>
+      </div>
+      <div class="sb-item" onclick="openTask('pricing')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span class="t">竞品定价调研</span>
+        <span class="s">周一</span>
+      </div>
+      <div class="sb-item" onclick="openTask('refactor')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+        <span class="t">订单模块重构</span>
+        <span class="s">10-24</span>
+      </div>
+
+      <div class="sb-label">历史</div>
+      <div class="sb-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>
+        <span class="t">全部任务</span>
+        <span class="s">24</span>
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-item" onclick="openSettings()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m6 8 4 4-4 4"/><path d="M13 16h5"/></svg>
+        <span class="t">执行器与模型</span>
+      </div>
+      <div class="sb-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span class="t">项目知识</span>
+      </div>
+      <div class="sb-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="t">设置</span>
+      </div>
+      <div class="sb-user">
+        <div class="sb-user-face">h</div>
+        <span class="sb-user-name">hao</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════ MAIN ══════ -->
+  <main class="main">
+
+    <header class="topbar">
+      <button class="iconbtn" id="expandBtn" title="展开侧栏" aria-label="展开侧栏" style="display:none" onclick="toggleSidebar()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="m14 15 3-3-3-3"/></svg>
+      </button>
+      <div class="topbar-title" id="taskTitle">结算说明文初稿</div>
+      <div class="topbar-sub" id="taskSub">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        运行中
+      </div>
+      <div class="top-spacer"></div>
+      <button class="iconbtn" onclick="toggleTheme()" title="切换主题" aria-label="切换主题" id="themeBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="iconbtn" id="drawerBtn" onclick="toggleDrawer()" title="任务详情" aria-label="任务详情">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+      </button>
+    </header>
+
+    <!-- thread -->
+    <div class="scroll" id="scroll">
+      <div class="thread" id="thread">
+
+        <div class="turn me">
+          <div class="turn-av me">h</div>
+          <div class="turn-body">
+            <div class="turn-head"><span class="turn-name">hao</span><span class="turn-time">10:12</span></div>
+            <div class="turn-text"><p>用现有文章规范写一篇结算说明文，给刚注册的新用户看。不要太长。</p></div>
+          </div>
+        </div>
+
+        <div class="turn">
+          <div class="turn-av coord">A</div>
+          <div class="turn-body">
+            <div class="turn-head"><span class="turn-name">协调器</span><span class="turn-time">10:12</span></div>
+            <div class="turn-text">
+              <p>我先读一遍 <span class="em">articles/规范.md</span> 和术语表，再由 <span class="em">Claude Code</span> 起草。写完后按审核策略交给 <span class="em">Codex</span> 独立审一遍，不通过就退回重写。</p>
+            </div>
+
+            <!-- run card -->
+            <div class="run" id="runCard">
+              <div class="run-head">
+                <span class="run-state pulse" id="runState"></span>
+                <span class="run-title">结算说明文 · 初稿</span>
+                <span class="run-host" id="runHost">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>
+                  Claude Code · claude-opus-5-5
+                </span>
+              </div>
+              <ol class="run-steps" id="runSteps">
+                <li class="run-step done">
+                  <span class="node"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                  读取文章规范与术语表
+                </li>
+                <li class="run-step now">
+                  <span class="node"><svg class="spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg></span>
+                  起草正文<span class="step-note">约 900 字</span>
+                </li>
+                <li class="run-step">
+                  <span class="node"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg></span>
+                  写入 articles/结算说明.md
+                </li>
+                <li class="run-step">
+                  <span class="node"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg></span>
+                  交 Codex 独立审核
+                </li>
+              </ol>
+              <div class="run-foot">
+                <span>已运行 2 分 41 秒</span>
+                <div class="spacer" style="flex:1"></div>
+                <button class="run-link" onclick="openDrawer()">查看任务详情
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- composer -->
+    <div class="composer-wrap">
+      <div class="composer" id="composer">
+        <div class="composer-field">
+          <textarea id="ta" rows="1" placeholder="描述任务，选择执行方式，交给协调器完成…" oninput="autoGrow(this);syncSend()" onkeydown="onKey(event)"></textarea>
+          <button class="send" id="sendBtn" disabled title="发送" aria-label="发送" onclick="sendOrStop()">
+            <svg id="sendIco" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          </button>
+        </div>
+
+        <div class="composer-bar">
+          <button class="chip" id="execChip" aria-expanded="false" onclick="togglePop('execPop', event)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>
+            <span class="lbl">执行方式</span>
+            <span class="val" id="execVal">自动</span>
+            <svg class="caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+
+          <span class="bar-sep"></span>
+
+          <button class="chip" id="modelChip" aria-expanded="false" onclick="togglePop('modelPop', event)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>
+            <span class="lbl">模型</span>
+            <span class="val" id="modelVal">自动</span>
+            <svg class="caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+
+          <div class="bar-spacer"></div>
+
+          <button class="bar-ico" title="执行策略" aria-label="执行策略" onclick="openStrategy(event)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          </button>
+          <button class="bar-ico" title="添加附件" aria-label="添加附件">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+        </div>
+
+        <!-- executor popover -->
+        <div class="pop" id="execPop">
+          <div class="pop-head">
+            <span>本次执行的宿主</span>
+            <button onclick="reprobe(event)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              重新检测
+            </button>
+          </div>
+
+          <div class="opt" data-exec="auto" onclick="pickExec('auto')">
+            <span class="opt-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg></span>
+            <div class="opt-main">
+              <div class="opt-name">自动</div>
+              <div class="opt-sub">按能力、成本与授权选择已连接的执行器</div>
+            </div>
+            <div class="opt-right" data-check="auto" style="visibility:hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          </div>
+
+          <div class="opt-sep"></div>
+
+          <div class="opt" data-exec="claude" onclick="pickExec('claude')">
+            <span class="opt-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg></span>
+            <div class="opt-main">
+              <div class="opt-name">Claude Code <span class="badge ok">已连接</span></div>
+              <div class="opt-sub">v2.1.3 · 已授权本机工作目录</div>
+            </div>
+            <div class="opt-right" data-check="claude" style="visibility:hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          </div>
+
+          <div class="opt" data-exec="codex" onclick="pickExec('codex')">
+            <span class="opt-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg></span>
+            <div class="opt-main">
+              <div class="opt-name">Codex <span class="badge ok">已连接</span></div>
+              <div class="opt-sub">App Server 2 个模型 · 只读审核已启用</div>
+            </div>
+            <div class="opt-right" data-check="codex" style="visibility:hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          </div>
+
+          <div class="opt disabled" data-exec="workbuddy" onclick="denied(event,'WorkBuddy 桌面账号尚未验证可被外部程序调用，无法选择。')">
+            <span class="opt-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg></span>
+            <div class="opt-main">
+              <div class="opt-name">WorkBuddy <span class="badge wait">待连接</span></div>
+              <div class="opt-sub">未检测到可调用的桌面接口或额度授权</div>
+            </div>
+          </div>
+
+          <div class="opt disabled" data-exec="aion" onclick="denied(event,'未在本机检测到 AionUi 的 ACP 桥。')">
+            <span class="opt-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></span>
+            <div class="opt-main">
+              <div class="opt-name">AionUi <span class="badge off">未安装</span></div>
+              <div class="opt-sub">未检测到 ACP 桥</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- model popover -->
+        <div class="pop" id="modelPop">
+          <div class="pop-head">
+            <span id="modelPopTitle">跟随执行器自动选择</span>
+            <button onclick="reprobe(event)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              重新检测
+            </button>
+          </div>
+          <div id="modelOpts"></div>
+          <div class="opt-sep"></div>
+          <div style="padding:6px 9px 8px;font-size:11px;color:var(--text-3);line-height:1.6">
+            列表来自执行器本次真实探测，未连接的模型不会显示。运行中切换只在下一个任务生效。
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-hint">
+        <span><kbd>Enter</kbd> 发送 &nbsp; <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</span>
+        <span id="hintRight">自动 · 自动模型</span>
+      </div>
+    </div>
+
+    <!-- ══════ DRAWER ══════ -->
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div class="drawer-title">任务详情</div>
+        <button class="iconbtn" onclick="toggleDrawer()" aria-label="关闭">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+
+        <div class="drawer-sec">
+          <h4>运行</h4>
+          <dl class="kv">
+            <dt>任务 ID</dt><dd style="font-size:12px">run_7f3a91</dd>
+            <dt>执行器</dt><dd>Claude Code <span style="color:var(--text-3)">v2.1.3</span></dd>
+            <dt>请求模型</dt><dd>claude-opus-5-5</dd>
+            <dt>实际模型</dt><dd>claude-opus-5-5 <span class="pill ok" style="margin-left:4px">已核对</span></dd>
+            <dt>工作目录</dt><dd style="font-size:12px">~/work/yipex-website</dd>
+            <dt>开始时</dt><dd>10:12:04</dd>
+            <dt>耗时</dt><dd>2 分 41 秒</dd>
+            <dt>权限模式</dt><dd>工作目录内读写</dd>
+          </dl>
+        </div>
+
+        <div class="drawer-sec">
+          <h4>事件</h4>
+          <div class="log">
+            <div><span class="t">10:12:04</span>已启动 Claude Code 会话</div>
+            <div class="ok"><span class="t">10:12:06</span>读取 articles/规范.md</div>
+            <div class="ok"><span class="t">10:12:09</span>读取 glossary.json</div>
+            <div class="now"><span class="t">10:12:51</span>正在起草正文，约 900 字</div>
+          </div>
+        </div>
+
+        <div class="drawer-sec">
+          <h4>产物</h4>
+          <div class="card" style="margin-top:0">
+            <div class="filerow" style="border-top:none">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              <span class="fname">articles/结算说明.md</span>
+              <span class="fmeta">草稿中</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-sec">
+          <h4>用量</h4>
+          <dl class="kv">
+            <dt>输入</dt><dd>18,402 tokens</dd>
+            <dt>输出</dt><dd>2,180 tokens</dd>
+            <dt>费用</dt><dd style="color:var(--text-3)">未知（未返回计价）</dd>
+          </dl>
+        </div>
+
+        <div class="drawer-sec">
+          <h4>中断与恢复</h4>
+          <p style="font-size:12.5px;color:var(--text-2);line-height:1.7">取消不会自动回滚已写入的文件。需要撤销时先查看变更清单再手动回退。</p>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+<div class="demo-tag">DEMO · 全部数据为模拟</div>
+
+<script>
+/* ═════════ 状态 ═════════ */
+const state = {
+  exec: 'auto',
+  model: 'auto',
+  running: true,
+  timer: 161,
+};
+
+const EXEC_NAMES = { auto:'自动', claude:'Claude Code', codex:'Codex' };
+
+/* 真实探测结果（原型中为模拟值） */
+const MODELS = {
+  auto: [
+    { id:'auto', name:'跟随执行器', sub:'由调度器在执行时决定，并在任务详情中记录实际模型', available:true },
+  ],
+  claude: [
+    { id:'auto', name:'跟随执行器自动', sub:'Claude Code 默认模型', available:true },
+    { id:'claude-opus-5-5', name:'Opus 5.5', sub:'Claude Code · 已检测可用 · 200K 上下文', available:true },
+    { id:'claude-sonnet-5-5', name:'Sonnet 5.5', sub:'Claude Code · 已检测可用 · 200K 上下文', available:true },
+    { id:'claude-haiku-5-5', name:'Haiku 5.5', sub:'Claude Code · 已检测可用 · 快速', available:true },
+  ],
+  codex: [
+    { id:'auto', name:'跟随执行器自动', sub:'Codex 默认模型', available:true },
+    { id:'gpt-5-codex', name:'GPT-5 Codex', sub:'Codex App Server · 已检测可用', available:true },
+    { id:'gpt-5', name:'GPT-5', sub:'Codex App Server · 已检测可用', available:true },
+    { id:'o3-deep', name:'o3-deep', sub:'账号未授权此模型', available:false, reason:'账号未授权' },
+  ],
+};
+
+/* ═════════ 主题 ═════════ */
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? '' : 'dark');
+}
+
+/* ═════════ 侧栏 ═════════ */
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  document.getElementById('expandBtn').style.display = sb.classList.contains('collapsed') ? 'flex' : 'none';
+}
+document.getElementById('collapseBtn').onclick = toggleSidebar;
+
+/* ═════════ 输入 ═════════ */
+function autoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 190) + 'px';
+}
+function syncSend(){
+  const ta = document.getElementById('ta');
+  const btn = document.getElementById('sendBtn');
+  if (state.running){ btn.disabled = false; return; }
+  btn.disabled = !ta.value.trim();
+}
+function onKey(e){
+  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendOrStop(); }
+}
+
+function sendOrStop(){
+  if (state.running){ stopRun(); return; }
+  const ta = document.getElementById('ta');
+  const text = ta.value.trim();
+  if (!text) return;
+  ta.value = ''; autoGrow(ta); syncSend();
+  appendUser(text);
+  startRun(text);
+}
+
+function appendUser(text){
+  const scroll = document.getElementById('scroll');
+  const t = new Date();
+  const ts = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+  const html = `
+    <div class="turn me">
+      <div class="turn-av me">h</div>
+      <div class="turn-body">
+        <div class="turn-head"><span class="turn-name">hao</span><span class="turn-time">${ts}</span></div>
+        <div class="turn-text"><p>${escapeHtml(text)}</p></div>
+      </div>
+    </div>`;
+  document.getElementById('thread').insertAdjacentHTML('beforeend', html);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function startRun(text){
+  const scroll = document.getElementById('scroll');
+  const execName = EXEC_NAMES[state.exec] || '自动';
+  const modelName = state.model === 'auto' ? '自动模型' : state.model;
+  const html = `
+    <div class="turn">
+      <div class="turn-av coord">A</div>
+      <div class="turn-body">
+        <div class="turn-head"><span class="turn-name">协调器</span><span class="turn-time">刚刚</span></div>
+        <div class="turn-text"><p>收到。我会先确认工作目录和上下文，再交给执行器处理。</p></div>
+        <div class="run" id="runCard">
+          <div class="run-head">
+            <span class="run-state pulse" id="runState"></span>
+            <span class="run-title">${escapeHtml(text.length > 22 ? text.slice(0,22)+'…' : text)}</span>
+            <span class="run-host" id="runHost">${execName} · ${modelName}</span>
+          </div>
+          <ol class="run-steps" id="runSteps">
+            <li class="run-step now"><span class="node"><svg class="spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg></span>准备工作目录与上下文</li>
+            <li class="run-step"><span class="node"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg></span>交给执行器</li>
+          </ol>
+          <div class="run-foot"><span>刚刚开始</span><div class="spacer" style="flex:1"></div>
+            <button class="run-link" onclick="openDrawer()">查看任务详情</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('thread').insertAdjacentHTML('beforeend', html);
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function stopRun(){
+  state.running = false;
+  const card = document.getElementById('runCard');
+  if (card){
+    const st = card.querySelector('.run-state');
+    if (st){ st.classList.remove('pulse'); st.style.background = 'var(--text-3)'; }
+    card.querySelectorAll('.run-step.now').forEach(el => {
+      el.classList.remove('now');
+      el.querySelector('.node').innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>';
+    });
+    const foot = card.querySelector('.run-foot');
+    if (foot) foot.innerHTML = '<span>已停止 · 未回滚已写入的文件</span><div style="flex:1"></div><button class="run-link" onclick="openDrawer()">查看任务详情</button>';
+  }
+  setSendIcon(false);
+  syncSend();
+}
+function setSendIcon(running){
+  const btn = document.getElementById('sendBtn');
+  const ico = document.getElementById('sendIco');
+  btn.classList.toggle('stop', running);
+  btn.title = running ? '停止运行' : '发送';
+  btn.setAttribute('aria-label', running ? '停止运行' : '发送');
+  ico.innerHTML = running
+    ? '<rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/>'
+    : '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>';
+}
+
+/* ═════════ 弹出层 ═════════ */
+function togglePop(id, ev){
+  ev.stopPropagation();
+  const pop = document.getElementById(id);
+  const open = pop.classList.contains('open');
+  closePops();
+  if (!open){
+    pop.classList.add('open');
+    const chip = id === 'execPop' ? 'execChip' : 'modelChip';
+    document.getElementById(chip).setAttribute('aria-expanded','true');
+    if (id === 'modelPop') renderModels();
+  }
+}
+function closePops(){
+  document.querySelectorAll('.pop.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-expanded','false'));
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.pop') && !e.target.closest('.chip') && !e.target.closest('.bar-ico')) closePops();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePops(); });
+
+/* ═════════ 执行器 ═════════ */
+function pickExec(id){
+  state.exec = id;
+  state.model = 'auto';
+  document.getElementById('execVal').textContent = EXEC_NAMES[id];
+  document.getElementById('modelVal').textContent = '自动';
+  document.querySelectorAll('[data-check]').forEach(el => el.style.visibility = 'hidden');
+  const chk = document.querySelector(`[data-check="${id}"]`);
+  if (chk) chk.style.visibility = 'visible';
+  document.getElementById('execChip').classList.toggle('warn', id === 'workbuddy');
+  updateHint();
+  closePops();
+}
+
+function denied(ev, msg){
+  ev.stopPropagation();
+  toast(msg);
+}
+
+/* ═════════ 模型 ═════════ */
+function renderModels(){
+  const list = MODELS[state.exec] || MODELS.auto;
+  const title = state.exec === 'auto' ? '跟随执行器自动选择' : `${EXEC_NAMES[state.exec]} 可用模型`;
+  document.getElementById('modelPopTitle').textContent = title;
+
+  document.getElementById('modelOpts').innerHTML = list.map(m => {
+    const sel = state.model === m.id;
+    return `
+      <div class="opt ${m.available ? '' : 'disabled'}"
+           onclick="${m.available ? `pickModel('${m.id}')` : `toast('${m.reason || '不可用'}')`}">
+        <span class="opt-ico">
+          ${m.available
+            ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>'
+            : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'}
+        </span>
+        <div class="opt-main">
+          <div class="opt-name">${m.name}${m.available ? '' : ' <span class="badge err">不可用</span>'}</div>
+          <div class="opt-sub">${m.sub}</div>
+        </div>
+        <div class="opt-right" style="visibility:${sel ? 'visible' : 'hidden'}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function pickModel(id){
+  state.model = id;
+  const list = MODELS[state.exec] || MODELS.auto;
+  const m = list.find(x => x.id === id);
+  document.getElementById('modelVal').textContent = id === 'auto' ? '自动' : m.name;
+  updateHint();
+  closePops();
+}
+
+function updateHint(){
+  const ex = EXEC_NAMES[state.exec];
+  document.getElementById('hintRight').textContent =
+    ex + ' · ' + (state.model === 'auto' ? '自动模型' : state.model);
+}
+
+/* ═════════ 抽屉 ═════════ */
+function toggleDrawer(){
+  const d = document.getElementById('drawer');
+  const open = d.classList.toggle('open');
+  d.setAttribute('aria-hidden', open ? 'false' : 'true');
+  document.getElementById('drawerBtn').classList.toggle('on', open);
+}
+function openDrawer(){
+  const d = document.getElementById('drawer');
+  d.classList.add('open');
+  d.setAttribute('aria-hidden','false');
+  document.getElementById('drawerBtn').classList.add('on');
+}
+
+/* ═════════ 其它 ═════════ */
+function newTask(){ toast('新工作空间（原型未实现）'); }
+function openTask(id){ toast('切换到任务：' + id); }
+function openSettings(){ toast('打开「执行器与模型」设置（原型未实现）'); }
+function openStrategy(ev){ ev.stopPropagation(); toast('执行策略：默认施工/审核执行器、权限模式、预算上限'); }
+function reprobe(ev){ ev.stopPropagation(); toast('已重新检测 3 个执行器 · 2 个可用'); }
+
+let toastTimer;
+function toast(msg){
+  let el = document.getElementById('toast');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--text);color:var(--surface);font-size:12.5px;padding:8px 14px;border-radius:8px;z-index:300;box-shadow:var(--shadow-pop);max-width:80vw;transition:opacity .15s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* 计时 */
+setInterval(() => {
+  if (!state.running) return;
+  state.timer++;
+  const card = document.querySelector('#runCard .run-foot span');
+  if (card && card.textContent.includes('已运行')){
+    const m = Math.floor(state.timer / 60), s = state.timer % 60;
+    card.textContent = `已运行 ${m} 分 ${s} 秒`;
+  }
+}, 1000);
+
+/* 初始化 */
+setSendIcon(true);
+updateHint();
+document.querySelector('[data-check="auto"]').style.visibility = 'visible';
+
+/* 供截图演示调用的场景钩子 */
+window.__demo = {
+  exec(){ togglePop('execPop', {stopPropagation(){}}) },
+  model(){ togglePop('modelPop', {stopPropagation(){}}) },
+  close: closePops,
+  drawer: openDrawer,
+  dark(){ document.documentElement.setAttribute('data-theme','dark') },
+  light(){ document.documentElement.removeAttribute('data-theme') },
+};
+</script>
+</body>
+</html>

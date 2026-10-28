@@ -1,0 +1,17 @@
+[
+  {
+    "test": "cancelled artifact retained and status sticky",
+    "passed": true,
+    "files": [
+      {
+        "action": "create",
+        "path": "created.txt",
+        "bytes": 27
+      }
+    ]
+  },
+  {
+    "test": "macOS /tmp alias works",
+    "passed": true
+  }
+]

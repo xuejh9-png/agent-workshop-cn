@@ -1,0 +1,126 @@
+[
+  {
+    "test": "ANCESTOR_HTTP_READ",
+    "status": 400,
+    "outsideRead": false
+  },
+  {
+    "test": "ANCESTOR_HTTP_WRITE",
+    "status": 400,
+    "outsideWrite": false
+  },
+  {
+    "test": "HTTP_REJECT_HOST",
+    "status": 403
+  },
+  {
+    "test": "HTTP_REJECT_ORIGIN",
+    "status": 403
+  },
+  {
+    "test": "HTTP_REJECT_CROSS_SITE",
+    "status": 403
+  },
+  {
+    "test": "HTTP_REJECT_BAD_TOKEN",
+    "status": 403
+  },
+  {
+    "test": "CANCEL_AFTER_RETURN_live",
+    "postReturnWrite": false,
+    "leaderExit": -15
+  },
+  {
+    "test": "CANCEL_AFTER_RETURN_exited",
+    "postReturnWrite": false,
+    "leaderExit": 0
+  },
+  {
+    "test": "CANCEL_STALLED_WORKER",
+    "status": "running",
+    "phase": "stopping",
+    "workerAlive": true,
+    "newRunBlocked": true
+  },
+  {
+    "test": "CANCEL_STALLED_FINISH",
+    "status": "cancelled"
+  },
+  {
+    "test": "MCP_BUDGET",
+    "first20Success": true,
+    "call21Error": true,
+    "fileCreated": false
+  },
+  {
+    "test": "LAUNCH_SCOPE",
+    "coordinator": true,
+    "allowWrite": false,
+    "mcp": {},
+    "disabledRetained": true
+  },
+  {
+    "test": "LAUNCH_SCOPE",
+    "coordinator": false,
+    "allowWrite": false,
+    "mcp": {
+      "mcp_servers.studio_files.command": "/Library/Developer/CommandLineTools/usr/bin/python3",
+      "mcp_servers.studio_files.args": [
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/file_tools.py",
+        "--root",
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/budget-files",
+        "--audit",
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/fixture.audit.jsonl"
+      ],
+      "mcp_servers.studio_files.startup_timeout_sec": 15,
+      "mcp_servers.studio_files.required": true,
+      "mcp_servers.studio_files.default_tools_approval_mode": "approve",
+      "mcp_servers.studio_files.enabled_tools": [
+        "read_file",
+        "list_files",
+        "write_file"
+      ]
+    },
+    "disabledRetained": true
+  },
+  {
+    "test": "LAUNCH_SCOPE",
+    "coordinator": false,
+    "allowWrite": true,
+    "mcp": {
+      "mcp_servers.studio_files.command": "/Library/Developer/CommandLineTools/usr/bin/python3",
+      "mcp_servers.studio_files.args": [
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/file_tools.py",
+        "--root",
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/budget-files",
+        "--audit",
+        "/private/var/folders/ht/x34zzjy96797xqpvyqvgw7cw0000gn/T/studio-m2-03913050-klut3_oj/fixture.audit.jsonl",
+        "--write"
+      ],
+      "mcp_servers.studio_files.startup_timeout_sec": 15,
+      "mcp_servers.studio_files.required": true,
+      "mcp_servers.studio_files.default_tools_approval_mode": "approve",
+      "mcp_servers.studio_files.enabled_tools": [
+        "read_file",
+        "list_files",
+        "write_file"
+      ]
+    },
+    "disabledRetained": true
+  },
+  {
+    "test": "SOURCE_UNCHANGED",
+    "file": "server.py",
+    "unchanged": true
+  },
+  {
+    "test": "SOURCE_UNCHANGED",
+    "file": "runtime.py",
+    "unchanged": true
+  },
+  {
+    "test": "SOURCE_UNCHANGED",
+    "file": "file_tools.py",
+    "unchanged": true
+  }
+]

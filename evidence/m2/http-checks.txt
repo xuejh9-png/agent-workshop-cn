@@ -1,0 +1,6 @@
+{"case": "csrf_missing", "http": 403, "error": "访问校验失败，请从本机页面重新打开"}
+{"case": "origin_external", "http": 403, "error": "访问校验失败，请从本机页面重新打开"}
+{"case": "overwrite_denied", "http": 400, "error": "[Errno 17] File exists: 'requirements.md'"}
+{"case": "traversal_denied", "http": 400, "error": "只能访问当前工作空间中的非隐藏文本文件"}
+{"case": "engine_unavailable", "http": 400, "error": "所选执行器尚未接入"}
+{"case": "model_unknown", "http": 400, "error": "模型不在当前执行器目录中，不会自动改用其他型号"}

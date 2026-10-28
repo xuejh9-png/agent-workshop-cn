@@ -1,0 +1,845 @@
+{
+  "models": [
+    {
+      "id": "gpt-6.1-sol",
+      "name": "GPT-6.1-Sol",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "low",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-6-astra",
+      "name": "GPT-6-Astra",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "low",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-6.1-terra",
+      "name": "GPT-6.1 Terra",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "low",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-6-sol",
+      "name": "GPT-6-Sol",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "medium",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-6-luna",
+      "name": "GPT-6-Luna",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "defaultEffort": "medium",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "name": "GPT-5.6-Sol",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "low",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "name": "GPT-5.6-Terra",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultEffort": "medium",
+      "source": "Codex App Server model/list"
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "name": "GPT-5.6-Luna",
+      "efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "defaultEffort": "medium",
+      "source": "Codex App Server model/list"
+    }
+  ],
+  "verified": {
+    "gpt-6-luna": {
+      "at": "2026-10-28T16:48:51+0800",
+      "sessionId": "01a181b2-802d-72f1-8db1-8b7113509a63",
+      "usage": {
+        "input_tokens": 14392,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 27,
+        "reasoning_output_tokens": 0
+      },
+      "actualModel": null,
+      "source": "Codex CLI 成功完成真实请求；上游实际型号未回传"
+    },
+    "gpt-6.1-terra": {
+      "at": "2026-10-28T16:49:01+0800",
+      "sessionId": "01a181b2-a898-7c61-8f2d-5149b240446a",
+      "usage": {
+        "input_tokens": 15020,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 27,
+        "reasoning_output_tokens": 0
+      },
+      "actualModel": null,
+      "source": "Codex CLI 成功完成真实请求；上游实际型号未回传"
+    }
+  },
+  "settings": {
+    "coordinatorModel": "gpt-6-luna",
+    "coordinatorEffort": "low",
+    "executorModel": "gpt-6-luna",
+    "executorEffort": "low",
+    "maxCalls": 2
+  },
+  "runs": [
+    {
+      "id": "cc6936218d5c4964a5f1c1744c219efb",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请读取 requirements.md，创建新的 summary-final.md，写入两句摘要并注明来源。必须实际使用文件工具，不要覆盖已有文件。",
+      "engine": "codex",
+      "requestedModel": "gpt-6-luna",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T17:11:57+0800",
+      "status": "completed",
+      "phase": "executor",
+      "route": "manual",
+      "answer": "已创建 [summary-final.md](summary-final.md)，内容为两句摘要并注明来源 `requirements.md`；未覆盖已有文件。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:11:57+0800"
+        },
+        {
+          "type": "process.started",
+          "pid": 52923,
+          "processGroup": 52923,
+          "role": "executor",
+          "at": "2026-10-28T17:11:57+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181c7-ceef-7221-9f7e-c00ff10227fb",
+          "role": "executor",
+          "at": "2026-10-28T17:11:59+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "list_files",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:12:10+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "read_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:12:17+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "write_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:12:25+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 74505,
+            "cached_input_tokens": 58752,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 247,
+            "reasoning_output_tokens": 0
+          },
+          "role": "executor",
+          "at": "2026-10-28T17:12:33+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 74505,
+            "cached_input_tokens": 58752,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 247,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181c7-ceef-7221-9f7e-c00ff10227fb",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "executor",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "action": "read",
+          "path": "requirements.md",
+          "bytes": 258
+        },
+        {
+          "action": "create",
+          "path": "summary-final.md",
+          "bytes": 162
+        }
+      ],
+      "allowWrite": true,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T17:12:35+0800"
+    },
+    {
+      "id": "817ad733ed10489aa79fa76494207c7e",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请读取 requirements.md，创建新的 summary-final.md，写入两句摘要并注明来源。必须实际使用文件工具，不要覆盖已有文件。",
+      "engine": "codex",
+      "requestedModel": "gpt-6-luna",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T17:08:45+0800",
+      "status": "completed",
+      "phase": "executor",
+      "route": "manual",
+      "answer": "已读取 `requirements.md`。但本次会话未授权创建文件，且文件工具只允许在已授权时新建文件，因此没有写入 `summary-final.md`。请开启本次创建文件权限后，我再写入两句摘要并注明来源。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:08:45+0800"
+        },
+        {
+          "type": "process.started",
+          "pid": 52370,
+          "processGroup": 52370,
+          "role": "executor",
+          "at": "2026-10-28T17:08:45+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181c4-df40-7ef1-a886-75a6439cc0f9",
+          "role": "executor",
+          "at": "2026-10-28T17:08:48+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "list_files",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:09:04+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "read_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:09:14+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 59252,
+            "cached_input_tokens": 33152,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 223,
+            "reasoning_output_tokens": 0
+          },
+          "role": "executor",
+          "at": "2026-10-28T17:09:24+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 59252,
+            "cached_input_tokens": 33152,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 223,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181c4-df40-7ef1-a886-75a6439cc0f9",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "executor",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "action": "read",
+          "path": "requirements.md",
+          "bytes": 258
+        }
+      ],
+      "allowWrite": true,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T17:09:29+0800"
+    },
+    {
+      "id": "22dcebe3089341919186b35de8fb81ef",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请用中文详细说明一个文本整理项目的完整验收方法，至少2000字；不要读写文件。",
+      "engine": "codex",
+      "requestedModel": "gpt-6-luna",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T17:07:01+0800",
+      "status": "cancelled",
+      "phase": "executor",
+      "route": "manual",
+      "answer": "",
+      "error": "执行器已停止；已写文件不会自动撤销",
+      "events": [
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:07:01+0800"
+        },
+        {
+          "type": "process.started",
+          "pid": 52089,
+          "processGroup": 52089,
+          "role": "executor",
+          "at": "2026-10-28T17:07:01+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181c3-4b02-70e2-8718-eac98c24cd02",
+          "role": "executor",
+          "at": "2026-10-28T17:07:02+0800"
+        }
+      ],
+      "calls": [],
+      "files": [],
+      "allowWrite": false,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T17:07:29+0800"
+    },
+    {
+      "id": "a384ec801a7e4bc59f8f39ef73aae3c0",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请实际读取当前工作空间的 requirements.md，用两句中文给我摘要，不要写入文件。",
+      "engine": "auto",
+      "requestedModel": "gpt-6-luna",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T17:04:51+0800",
+      "status": "completed",
+      "phase": "executor",
+      "route": "delegate",
+      "answer": "项目目标是将中文项目资料整理成简明说明，摘要最多两句并明确写出来源文件，不编造费用或审核结果。安全范围仅限测试工作空间，不得操作真实业务仓库。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "coordinator",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:04:51+0800"
+        },
+        {
+          "type": "process.started",
+          "pid": 51675,
+          "processGroup": 51675,
+          "role": "coordinator",
+          "at": "2026-10-28T17:04:51+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181c1-4e00-7eb3-aab2-b51e1498577d",
+          "role": "coordinator",
+          "at": "2026-10-28T17:04:53+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14541,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 79,
+            "reasoning_output_tokens": 0
+          },
+          "role": "coordinator",
+          "at": "2026-10-28T17:05:04+0800"
+        },
+        {
+          "type": "coordinator.delegated",
+          "reason": "",
+          "at": "2026-10-28T17:05:07+0800"
+        },
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:05:07+0800"
+        },
+        {
+          "type": "process.started",
+          "pid": 51777,
+          "processGroup": 51777,
+          "role": "executor",
+          "at": "2026-10-28T17:05:07+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181c1-8b34-70b2-b2ac-5a24db9b1f99",
+          "role": "executor",
+          "at": "2026-10-28T17:05:07+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "list_files",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:05:20+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "read_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:05:28+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 58932,
+            "cached_input_tokens": 43520,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 190,
+            "reasoning_output_tokens": 0
+          },
+          "role": "executor",
+          "at": "2026-10-28T17:05:38+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 14541,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 79,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181c1-4e00-7eb3-aab2-b51e1498577d",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "coordinator",
+          "exitCode": 0
+        },
+        {
+          "usage": {
+            "input_tokens": 58932,
+            "cached_input_tokens": 43520,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 190,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181c1-8b34-70b2-b2ac-5a24db9b1f99",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "executor",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "action": "read",
+          "path": "requirements.md",
+          "bytes": 258
+        }
+      ],
+      "allowWrite": false,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T17:05:44+0800"
+    },
+    {
+      "id": "3a34bfd2f67a476b831aeeb0cd4514cc",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请读取 requirements.md，使用文件工具创建 summary.md，写入两句中文摘要并注明来源。完成后说明实际创建的文件。",
+      "engine": "codex",
+      "requestedModel": "gpt-6-luna",
+      "effort": "medium",
+      "actualModel": null,
+      "created": "2026-10-28T17:01:01+0800",
+      "status": "completed",
+      "phase": "executor",
+      "route": "manual",
+      "answer": "已读取 `requirements.md`，并使用文件工具创建了 `summary.md`，其中写入两句中文摘要并注明来源。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6-luna",
+          "effort": "medium",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T17:01:01+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181bd-cbb1-7141-a4c2-52fe6bfdb9cd",
+          "role": "executor",
+          "at": "2026-10-28T17:01:02+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "list_files",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:01:16+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "read_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:01:25+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "write_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T17:01:33+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 74348,
+            "cached_input_tokens": 35840,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 276,
+            "reasoning_output_tokens": 26
+          },
+          "role": "executor",
+          "at": "2026-10-28T17:01:43+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 74348,
+            "cached_input_tokens": 35840,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 276,
+            "reasoning_output_tokens": 26
+          },
+          "sessionId": "01a181bd-cbb1-7141-a4c2-52fe6bfdb9cd",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "executor",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "action": "read",
+          "path": "requirements.md",
+          "bytes": 258
+        },
+        {
+          "action": "create",
+          "path": "summary.md",
+          "bytes": 159
+        }
+      ],
+      "allowWrite": true,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T17:01:45+0800"
+    },
+    {
+      "id": "dadc29a532e4428d838b1d38dc589914",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "请使用文件工具读取 requirements.md，用两句中文摘要，并说明来源文件。不要写入文件。",
+      "engine": "codex",
+      "requestedModel": "gpt-6.1-terra",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T16:55:15+0800",
+      "status": "completed",
+      "phase": "executor",
+      "route": "manual",
+      "answer": "项目目标是将中文项目资料整理成简明说明，摘要最多两句并明确来源，不编造费用或审核结果。安全范围仅限测试工作空间，不得操作真实业务仓库。\n\n来源文件：`requirements.md`。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "executor",
+          "requestedModel": "gpt-6.1-terra",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T16:55:15+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181b8-852c-7b31-8c1c-579b7edbffb4",
+          "role": "executor",
+          "at": "2026-10-28T16:55:17+0800"
+        },
+        {
+          "type": "tool.completed",
+          "tool": "read_file",
+          "server": "studio_files",
+          "role": "executor",
+          "error": false,
+          "at": "2026-10-28T16:55:28+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 46019,
+            "cached_input_tokens": 30080,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 150,
+            "reasoning_output_tokens": 0
+          },
+          "role": "executor",
+          "at": "2026-10-28T16:55:36+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 46019,
+            "cached_input_tokens": 30080,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 150,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181b8-852c-7b31-8c1c-579b7edbffb4",
+          "requestedModel": "gpt-6.1-terra",
+          "actualModel": null,
+          "role": "executor",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "action": "read",
+          "path": "requirements.md",
+          "bytes": 258
+        }
+      ],
+      "allowWrite": false,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "task",
+      "ended": "2026-10-28T16:55:38+0800"
+    },
+    {
+      "id": "01ca08707062417faf6b6e590aafef8e",
+      "parent": null,
+      "workspace": "87315c1c0b9240caa9cb119e3533c594",
+      "text": "你是谁？请用一句中文回答。",
+      "engine": "auto",
+      "requestedModel": "gpt-6-luna",
+      "effort": "low",
+      "actualModel": null,
+      "created": "2026-10-28T16:53:16+0800",
+      "status": "completed",
+      "phase": "coordinator",
+      "route": "answer",
+      "answer": "我是这个中文工作台的主控模型，可以用中文协助你解答问题和处理任务。",
+      "error": null,
+      "events": [
+        {
+          "type": "call.started",
+          "role": "coordinator",
+          "requestedModel": "gpt-6-luna",
+          "effort": "low",
+          "adapter": "codex exec",
+          "sandbox": "read-only",
+          "shell": false,
+          "at": "2026-10-28T16:53:16+0800"
+        },
+        {
+          "type": "thread.started",
+          "sessionId": "01a181b6-b33e-7070-95de-eb9722ed68ea",
+          "role": "coordinator",
+          "at": "2026-10-28T16:53:18+0800"
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14503,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 46,
+            "reasoning_output_tokens": 0
+          },
+          "role": "coordinator",
+          "at": "2026-10-28T16:53:25+0800"
+        }
+      ],
+      "calls": [
+        {
+          "usage": {
+            "input_tokens": 14503,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 46,
+            "reasoning_output_tokens": 0
+          },
+          "sessionId": "01a181b6-b33e-7070-95de-eb9722ed68ea",
+          "requestedModel": "gpt-6-luna",
+          "actualModel": null,
+          "role": "coordinator",
+          "exitCode": 0
+        }
+      ],
+      "files": [],
+      "allowWrite": false,
+      "settings": {
+        "coordinatorModel": "gpt-6-luna",
+        "coordinatorEffort": "low",
+        "executorModel": "gpt-6-luna",
+        "executorEffort": "low",
+        "maxCalls": 2
+      },
+      "kind": "chat",
+      "ended": "2026-10-28T16:53:27+0800"
+    }
+  ]
+}

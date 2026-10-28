@@ -1,0 +1,28 @@
+{
+  "before": {
+    "id": "22dcebe3089341919186b35de8fb81ef",
+    "status": "running",
+    "processes": [
+      {
+        "type": "process.started",
+        "pid": 52089,
+        "processGroup": 52089,
+        "role": "executor",
+        "at": "2026-10-28T17:07:01+0800"
+      }
+    ]
+  },
+  "after": {
+    "id": "22dcebe3089341919186b35de8fb81ef",
+    "status": "cancelled",
+    "error": "执行器已停止；已写文件不会自动撤销"
+  },
+  "processChecks": [
+    {
+      "pid": 52089,
+      "psExit": 1,
+      "state": "",
+      "present": false
+    }
+  ]
+}

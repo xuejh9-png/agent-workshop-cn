@@ -5,6 +5,7 @@ MAX_FILE = 256 * 1024
 EXTENSIONS = {'.md', '.txt'}
 
 class ScopedFiles:
+    extensions = EXTENSIONS
     def __init__(self, root, writable=False, audit=None):
         original = Path(root).absolute()
         # macOS has immutable OS aliases /var and /tmp. Canonicalize only
@@ -36,7 +37,7 @@ class ScopedFiles:
         p = PurePosixPath(name)
         if p.is_absolute() or any(x in ('..', '.') or x.startswith('.') for x in p.parts):
             raise ValueError('只能访问当前工作空间中的非隐藏文本文件')
-        if len(p.parts) > 8 or len(name) > 240 or p.suffix.lower() not in EXTENSIONS:
+        if len(p.parts) > 8 or len(name) > 240 or p.suffix.lower() not in self.extensions:
             raise ValueError('本阶段仅支持 .md / .txt，且路径最多八级')
         return p.parts
 
@@ -86,20 +87,28 @@ class ScopedFiles:
         # No recursive disk scan. Root-level safe text files only.
         out=[]
         for name in os.listdir(self.root_fd):
-            if name.startswith('.') or Path(name).suffix.lower() not in EXTENSIONS: continue
+            if name.startswith('.') or Path(name).suffix.lower() not in self.extensions: continue
             info=os.stat(name, dir_fd=self.root_fd, follow_symlinks=False)
             if stat.S_ISREG(info.st_mode) and info.st_nlink==1:
                 out.append({'path':name,'bytes':info.st_size})
         return sorted(out,key=lambda x:x['path'])[:200]
 
-def serve(root, writable, audit):
-    files=ScopedFiles(root,writable,audit)
+def serve(root, writable, audit, manifest=None):
+    if manifest:
+        from project_files import SnapshotFiles
+        files=SnapshotFiles(root,writable,audit,manifest)
+    else:files=ScopedFiles(root,writable,audit)
     tools=[
         {'name':'list_files','description':'列出当前已授权工作空间根目录的 md/txt 文件。','inputSchema':{'type':'object','properties':{},'additionalProperties':False}},
         {'name':'read_file','description':'读取当前工作空间中的 UTF-8 md/txt 文件，禁止越界和链接。','inputSchema':{'type':'object','properties':{'path':{'type':'string'}},'required':['path'],'additionalProperties':False}},
         {'name':'write_file','description':'仅在本次已授权时，创建新的 UTF-8 md/txt 文件。不允许覆盖已有文件。','inputSchema':{'type':'object','properties':{'path':{'type':'string'},'content':{'type':'string'}},'required':['path','content'],'additionalProperties':False}}]
     for tool in tools:
         tool['annotations']={'readOnlyHint':tool['name']!='write_file','destructiveHint':False,'openWorldHint':False}
+    if manifest:
+        tools[0]['description']='列出本次明确授权的源码快照文件。'
+        tools[1]['description']='读取本次明确授权的 UTF-8 源码快照，不能访问原项目或其他文件。'
+        tools[2]['description']='为本次授权文件提出完整替换内容，只修改隔离快照；原项目需独立审核及用户确认后才写入。'
+    if not writable:tools=[tool for tool in tools if tool['name']!='write_file']
     tool_calls=0
     for line in sys.stdin:
         try:
@@ -126,5 +135,5 @@ def serve(root, writable, audit):
             continue
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--root',required=True);parser.add_argument('--audit',required=True);parser.add_argument('--write',action='store_true')
-    a=parser.parse_args();serve(a.root,a.write,a.audit)
+    parser=argparse.ArgumentParser();parser.add_argument('--root',required=True);parser.add_argument('--audit',required=True);parser.add_argument('--write',action='store_true');parser.add_argument('--manifest')
+    a=parser.parse_args();serve(a.root,a.write,a.audit,a.manifest)

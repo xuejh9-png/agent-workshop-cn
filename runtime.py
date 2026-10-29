@@ -1,5 +1,5 @@
 """Local Codex CLI adapter: discovery, bounded processes, durable evidence."""
-import hashlib, json, os, selectors, shutil, signal, subprocess, sys, threading, time
+import hashlib, hmac, json, os, selectors, shutil, signal, subprocess, sys, threading, time
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent
@@ -114,7 +114,7 @@ class CodexAdapter:
         with self.lock:p=self.processes.get(run_id)
         if p:self.terminate(p)
 
-    def call(self, run_id, model, effort, prompt, cwd, on_event, cancelled, coordinator=False, writable=False):
+    def call(self, run_id, model, effort, prompt, cwd, on_event, cancelled, coordinator=False, writable=False, manifest=None):
         cmd=[codex_binary(),'exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','-C',str(cwd),'-m',model,'--json']
         overrides={'features.shell_tool':False,'features.apply_patch_freeform':False,'web_search':'disabled','model_reasoning_effort':effort,'features.multi_agent':False,'features.apps':False,'features.hooks':False,'features.plugins':False,'features.remote_plugin':False,'features.browser_use':False,'features.browser_use_external':False,'features.computer_use':False,'features.in_app_browser':False,'features.image_generation':False,'features.view_image':False,'model_provider':'studio_https','model_providers.studio_https.name':'OpenAI HTTPS','model_providers.studio_https.wire_api':'responses','model_providers.studio_https.requires_openai_auth':True,'model_providers.studio_https.supports_websockets':False}
         audit=self.data/(run_id+'.audit.jsonl')
@@ -122,6 +122,7 @@ class CodexAdapter:
         else:
             args=[str(ROOT/'file_tools.py'),'--root',str(cwd),'--audit',str(audit)]
             if writable:args.append('--write')
+            if manifest:args+=['--manifest',str(manifest)]
             overrides.update({'mcp_servers.studio_files.command':sys.executable,'mcp_servers.studio_files.args':args,'mcp_servers.studio_files.startup_timeout_sec':15,'mcp_servers.studio_files.required':True,'mcp_servers.studio_files.default_tools_approval_mode':'approve','mcp_servers.studio_files.enabled_tools':['read_file','list_files','write_file']})
         for key,value in overrides.items():cmd+=['-c',key+'='+json.dumps(value,ensure_ascii=False)]
         cmd+=['-']
@@ -224,19 +225,22 @@ class ClaudeAdapter:
                 with os.fdopen(fd,'w') as f:f.write(secrets.token_hex(32))
             except FileExistsError:pass
         namespace=salt.read_text()
-        # Bind the account to the configured endpoint only, never to the secret.
-        return {'accountId':hashlib.sha256((namespace+'claude:'+base).encode()).hexdigest(),'configId':'claude-code-studio-v1'}
+        # A keyed local fingerprint invalidates verification when credentials
+        # rotate, without persisting credentials or a reusable plain hash.
+        return {'accountId':hmac.new(namespace.encode(),('claude:'+base+':'+token).encode(),hashlib.sha256).hexdigest(),'configId':'claude-code-studio-v2'}
     account_identity=identity
     def cancel(self,run_id):
         with self.lock:p=self.processes.get(run_id)
         if p:CodexAdapter.terminate(p)
-    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False):
+    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False,manifest=None):
         cfg=claude_settings();env={**os.environ,**cfg}
         audit=self.data/(run_id+'.audit.jsonl')
         server={'command':sys.executable,'args':[str(ROOT/'file_tools.py'),'--root',str(cwd),'--audit',str(audit)]+(['--write'] if writable else [])}
+        if manifest:server['args']+=['--manifest',str(manifest)]
         allowed=['mcp__studio_files__list_files','mcp__studio_files__read_file']+(['mcp__studio_files__write_file'] if writable else [])
         cmd=[claude_binary(),'-p','--output-format','json','--model',model,'--effort',effort,
-             '--strict-mcp-config','--mcp-config',json.dumps({'mcpServers':{'studio_files':server}},ensure_ascii=False),
+             '--safe-mode','--restricted','--setting-sources','','--tools','','--disable-slash-commands','--no-session-persistence',
+             '--strict-mcp-config','--mcp-config',json.dumps({'mcpServers':{} if coordinator else {'studio_files':server}},ensure_ascii=False),
              '--allowedTools',*allowed,
              # Everything that could read, write or execute outside the scoped
              # broker is denied explicitly rather than left to defaults.
@@ -248,12 +252,11 @@ class ClaudeAdapter:
         on_event({'type':'process.started','pid':p.pid,'processGroup':p.pid,'role':role})
         try:
             if cancelled():raise InterruptedError('用户已停止')
-            p.stdin.write(prompt);p.stdin.close()
-            out,err=p.communicate(timeout=300)
+            out,err=p.communicate(input=prompt,timeout=300)
             if cancelled():raise InterruptedError('用户已停止')
             try:value=json.loads(out[out.find('{'):out.rfind('}')+1])
-            except ValueError:raise RuntimeError((err or out or 'Claude Code 未返回可解析结果')[:300])
-            if value.get('is_error'):raise RuntimeError(str(value.get('result') or 'Claude Code 调用失败')[:300])
+            except ValueError:raise RuntimeError('Claude Code 未返回可解析结果，请检查连接')
+            if not isinstance(value,dict) or value.get('is_error'):raise RuntimeError('Claude Code 调用失败，请检查连接、额度与型号权限')
             text=value.get('result')
             if not isinstance(text,str) or not text.strip():raise RuntimeError('Claude Code 返回空回答')
             usage=value.get('usage') or {}
@@ -268,6 +271,14 @@ class ClaudeAdapter:
 
 
 WORKBUDDY_CLI='/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy-lite-wb.mjs'
+# WorkBuddy has additional desktop/team tools beyond the Claude tool names.
+# Keep the printed init inventory fail-closed as well as denying these names.
+WORKBUDDY_DENIED=['Bash','Edit','Write','Read','Glob','Grep','WebFetch','WebSearch','Task','NotebookEdit',
+    'Agent','PowerShell','EnterPlanMode','ExitPlanMode','TaskCreate','TaskGet','TaskUpdate','TaskList',
+    'TaskStop','TaskOutput','Skill','AskUserQuestion','StructuredOutput','ToolSearch','DeferExecuteTool',
+    'SendMessage','TeamCreate','TeamDelete','ImageGen','ViewImage','LibraryUpload','VideoGen',
+    'AudioTranscribe','A2AGetAgentCard','A2ASendMessage','A2AGetTask','A2ACancelTask','ListMcpResources',
+    'ReadMcpResource','MessageColleague','SpeakInChannel','ChannelTasks','CreateColleague','CreateChannel','ListColleagues']
 def workbuddy_models():
     """Read the CLI's own model list. Hardcoding names here would drift and would
     have missed models the user actually uses (e.g. DeepSeek-V4.1-Flash)."""
@@ -296,10 +307,21 @@ def save_workbuddy_key(key):
     if not isinstance(key,str) or not key.strip() or len(key.strip())>512 or any(c in key for c in '\r\n\x00'):
         raise ValueError('API Key 格式无效')
     path=Path.home()/'.workbuddy/api-key'
-    path.parent.mkdir(parents=True,exist_ok=True)
-    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)
-    with os.fdopen(fd,'w') as f:f.write(key.strip())
-    os.chmod(path,0o600)
+    path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
+    from file_tools import ScopedFiles
+    import secrets, stat
+    directory=ScopedFiles(path.parent);temp='.api-key-'+secrets.token_hex(12)
+    try:
+        try:
+            current=os.stat('api-key',dir_fd=directory.root_fd,follow_symlinks=False)
+            if not stat.S_ISREG(current.st_mode) or current.st_nlink!=1:raise ValueError('密钥文件必须是普通文件，不能是链接')
+        except FileNotFoundError:pass
+        fd=os.open(temp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600,dir_fd=directory.root_fd)
+        with os.fdopen(fd,'w') as f:f.write(key.strip());f.flush();os.fsync(f.fileno())
+        os.replace(temp,'api-key',src_dir_fd=directory.root_fd,dst_dir_fd=directory.root_fd)
+    finally:
+        try:os.unlink(temp,dir_fd=directory.root_fd)
+        except FileNotFoundError:pass
     return {'host':'workbuddy','configured':True,'path':str(path)}
 
 def workbuddy_key_present():
@@ -329,7 +351,7 @@ class WorkBuddyAdapter:
         self.data=Path(data);self.processes={};self.lock=threading.RLock()
     def catalog(self,refresh=False):return [dict(m) for m in workbuddy_models()]
     def identity(self):
-        workbuddy_cli();workbuddy_credentials()
+        workbuddy_cli();name,key=workbuddy_credentials()
         salt=self.data/'connection-namespace'
         if not salt.exists():
             import secrets
@@ -338,22 +360,23 @@ class WorkBuddyAdapter:
                 with os.fdopen(fd,'w') as f:f.write(secrets.token_hex(32))
             except FileExistsError:pass
         namespace=salt.read_text()
-        # Bind to the installation endpoint, never to the secret itself.
-        return {'accountId':hashlib.sha256((namespace+'workbuddy:codebuddy-cli:v1').encode()).hexdigest(),'configId':'workbuddy-codebuddy-cli-v1'}
+        return {'accountId':hmac.new(namespace.encode(),('workbuddy:'+name+':'+key).encode(),hashlib.sha256).hexdigest(),'configId':'workbuddy-codebuddy-cli-v2'}
     account_identity=identity
     def cancel(self,run_id):
         with self.lock:p=self.processes.get(run_id)
         if p:CodexAdapter.terminate(p)
-    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False):
-        name,key=workbuddy_credentials();env={**os.environ,name:key}
+    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False,manifest=None):
+        name,key=workbuddy_credentials();env={**os.environ,name:key,'CODEBUDDY_CODE_DISABLE_AUTO_MEMORY':'1'}
         audit=self.data/(run_id+'.audit.jsonl')
         server={'command':sys.executable,'args':[str(ROOT/'file_tools.py'),'--root',str(cwd),'--audit',str(audit)]+(['--write'] if writable else [])}
+        if manifest:server['args']+=['--manifest',str(manifest)]
         allowed=['mcp__studio_files__list_files','mcp__studio_files__read_file']+(['mcp__studio_files__write_file'] if writable else [])
-        cmd=[shutil.which('node') or 'node',workbuddy_cli(),'-p','--output-format','json','--model',model,
+        cmd=[shutil.which('node') or 'node',workbuddy_cli(),'-p','--output-format','stream-json','--verbose','--model',model,
+             '--setting-sources','','--tools','','--no-session-persistence','--settings','{"disableAllHooks":true,"autoMemoryEnabled":false}',
              '--effort',effort,'--max-turns','12','--strict-mcp-config',
-             '--mcp-config',json.dumps({'mcpServers':{'studio_files':server}},ensure_ascii=False),
+             '--mcp-config',json.dumps({'mcpServers':{} if coordinator else {'studio_files':server}},ensure_ascii=False),
              '--allowedTools',*allowed,
-             '--disallowedTools','Bash','Edit','Write','Read','Glob','Grep','WebFetch','WebSearch','Task','NotebookEdit']
+             '--disallowedTools',*WORKBUDDY_DENIED]
         role='coordinator' if coordinator else 'executor'
         on_event({'type':'call.started','role':role,'requestedModel':model,'effort':effort,'adapter':'codebuddy -p','sandbox':'scoped-mcp','shell':False})
         p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=str(cwd),start_new_session=True,env=env)
@@ -362,17 +385,36 @@ class WorkBuddyAdapter:
         try:
             if cancelled():raise InterruptedError('用户已停止')
             p.stdin.write(prompt);p.stdin.close()
-            out,err=p.communicate(timeout=300)
+            selector=selectors.DefaultSelector();selector.register(p.stdout,selectors.EVENT_READ);selector.register(p.stderr,selectors.EVENT_READ)
+            deadline=time.monotonic()+300;buffer=b'';total=0;value=None;initialized=False
+            while selector.get_map():
+                if cancelled():raise InterruptedError('用户已停止')
+                if time.monotonic()>deadline:raise TimeoutError('WorkBuddy 执行超时，已停止')
+                for ready,_ in selector.select(.15):
+                    chunk=os.read(ready.fileobj.fileno(),65536)
+                    if not chunk:selector.unregister(ready.fileobj);continue
+                    total+=len(chunk)
+                    if total>2_000_000:raise RuntimeError('WorkBuddy 返回内容过多，已停止')
+                    if ready.fileobj is p.stderr:continue
+                    buffer+=chunk
+                    while b'\n' in buffer:
+                        line,buffer=buffer.split(b'\n',1)
+                        try:item=json.loads(line)
+                        except ValueError:continue
+                        if not isinstance(item,dict):continue
+                        if item.get('type')=='system' and item.get('subtype')=='init':
+                            actual=item.get('tools');expected=set() if coordinator else set(allowed)
+                            if not isinstance(actual,list) or set(actual)!=expected:raise RuntimeError('WorkBuddy 工具范围与本次授权不一致，已停止；请检查 CLI 版本与受限配置')
+                            initialized=True
+                            on_event({'type':'tools.checked','role':role,'tools':actual})
+                        if item.get('type')=='result':value=item
+            p.wait(timeout=5)
             if cancelled():raise InterruptedError('用户已停止')
-            combined=(out or '')+(err or '')
-            # The CLI exits 0 even when unauthenticated, so the text is the signal.
-            if 'Authentication required' in combined or 'Please use /login' in combined:
-                raise RuntimeError('WorkBuddy 未登录：请为 CodeBuddy CLI 配置 API Key 后重试')
-            try:value=json.loads(out[out.find('{'):out.rfind('}')+1])
-            except ValueError:raise RuntimeError((err or out or 'WorkBuddy 未返回可解析结果')[:300])
-            if value.get('is_error') or value.get('subtype')=='error':raise RuntimeError(str(value.get('result') or 'WorkBuddy 调用失败')[:300])
+            if not initialized or not isinstance(value,dict):raise RuntimeError('WorkBuddy 未返回工具范围和完成结果，请检查登录与连接')
+            if value.get('is_error') or value.get('subtype')=='error':raise RuntimeError('WorkBuddy 调用失败，请检查登录、额度与型号权限')
             text=value.get('result') if isinstance(value.get('result'),str) else value.get('text')
             if not isinstance(text,str) or not text.strip():raise RuntimeError('WorkBuddy 返回空回答')
+            if 'DSML' in text and ('invoke' in text or 'calls' in text):raise RuntimeError('WorkBuddy 返回了未执行的工具调用文本，CLI 没有实际执行文件操作；请改用已验证的 Codex 员工')
             usage=value.get('usage') or {}
             models=[k for k in (value.get('modelUsage') or {})]
             return {'text':text,'usage':{'input_tokens':usage.get('input_tokens'),'output_tokens':usage.get('output_tokens'),'cached_input_tokens':usage.get('cache_read_input_tokens')},

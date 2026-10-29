@@ -430,7 +430,7 @@ class V12Tests(unittest.TestCase):
             self.app.config.save(body)
         # A host that is not wired at all is still refused outright.
         body = copy.deepcopy(self.app.config.get())
-        body['employeeProfilesByHost']['workbuddy'] = {'enabled': False, 'model': None, 'effort': 'low'}
+        body['employeeProfilesByHost']['unwired'] = {'enabled': False, 'model': None, 'effort': 'low'}
         with self.assertRaises(ValueError):
             self.app.config.save(body)
         body = copy.deepcopy(self.app.config.get())

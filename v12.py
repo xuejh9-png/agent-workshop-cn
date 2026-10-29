@@ -44,10 +44,16 @@ class Configurations:
             if not isinstance(p,dict) or type(p.get('enabled')) is not bool:raise ValueError('员工启用状态无效')
             if p['enabled']:self.check(h,p,identities[h])
             elif p.get('model'):self.check(h,p,identities[h],False)
-        if candidate.get('reviewPolicy',{}).get('enabled'):raise ValueError('独立审核尚未接入，不可启用')
+        review=candidate.get('reviewPolicy')
+        if not isinstance(review,dict) or type(review.get('enabled')) is not bool:raise ValueError('审核配置无效')
+        if review['enabled']:
+            review_host=review.get('host')
+            self.check(review_host,review,self.identity(review_host))
+            review={'enabled':True,'host':review_host,'model':review['model'],'effort':review['effort']}
+        else:review={'enabled':False}
         name=candidate.get('productName','Agent Studio')
         if not isinstance(name,str) or not 1<=len(name.strip())<=60:raise ValueError('产品展示名格式无效')
-        clean={'schemaVersion':2,'revision':old['revision']+1,'productName':name.strip(),'managerHost':host,'managerModelByHost':managers,'employeeProfilesByHost':employees,'reviewPolicy':{'enabled':False},'updatedAt':stamp()}
+        clean={'schemaVersion':2,'revision':old['revision']+1,'productName':name.strip(),'managerHost':host,'managerModelByHost':managers,'employeeProfilesByHost':employees,'reviewPolicy':review,'updatedAt':stamp()}
         self.app.store.put('settings','v2',clean)
         return self.get()
     def verify(self,host,model,effort):

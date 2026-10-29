@@ -8,12 +8,12 @@ class HostAdapterTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
         self.script=self.root/'cli.py'
     def tearDown(self):self.temp.cleanup()
-    def run_workbuddy(self,value):
+    def run_workbuddy(self,value,exit_code=0):
         events=value if isinstance(value,list) else [dict(type='result',**value)]
         events=[dict(type='result',**x) if 'result' in x and 'type' not in x else x for x in events]
         init={'type':'system','subtype':'init','tools':['mcp__studio_files__list_files','mcp__studio_files__read_file']}
         lines=[init,*events]
-        self.script.write_text('import sys,json\nsys.stdin.read()\n'+''.join('print('+repr(json.dumps(line))+',flush=True)\n' for line in lines))
+        self.script.write_text('import sys,json\nsys.stdin.read()\n'+''.join('print('+repr(json.dumps(line))+',flush=True)\n' for line in lines)+'sys.exit('+str(exit_code)+')\n')
         with patch('runtime.workbuddy_credentials',return_value=('CODEBUDDY_API_KEY','test-only')),patch('runtime.workbuddy_cli',return_value=str(self.script)),patch('runtime.shutil.which',return_value=sys.executable):
             return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
     def test_workbuddy_array_returns_only_terminal_result(self):
@@ -30,6 +30,15 @@ class HostAdapterTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):self.run_workbuddy(value)
     def test_workbuddy_unexecuted_tool_markup_fails(self):
         with self.assertRaisesRegex(RuntimeError,'未执行'):self.run_workbuddy({'result':'<DSML calls><invoke name="Bash">'})
+    def test_workbuddy_nonzero_exit_does_not_report_success(self):
+        with self.assertRaisesRegex(RuntimeError,'异常退出'):self.run_workbuddy({'result':'looks successful'},7)
+    def test_claude_stdin_and_nonzero_exit(self):
+        self.script.write_text('#!'+sys.executable+'\nimport sys,json\ntext=sys.stdin.read()\nprint(json.dumps({"result":text,"session_id":"stub","usage":{}}))\nsys.exit(7 if text=="fail" else 0)\n');self.script.chmod(0o700)
+        with patch('runtime.claude_binary',return_value=str(self.script)),patch('runtime.claude_settings',return_value={}):
+            adapter=ClaudeAdapter(self.root)
+            value=adapter.call('stdin','opus','low','stdin intact',self.root,lambda e:None,lambda:False,coordinator=True)
+            self.assertEqual(value['text'],'stdin intact')
+            with self.assertRaisesRegex(RuntimeError,'异常退出'):adapter.call('failed','opus','low','fail',self.root,lambda e:None,lambda:False,coordinator=True)
     def test_rotated_credentials_invalidate_workbuddy_verification(self):
         with patch('runtime.workbuddy_cli',return_value='fake'),patch('runtime.workbuddy_credentials',return_value=('KEY','first')):
             before=WorkBuddyAdapter(self.root).identity()

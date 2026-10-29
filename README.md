@@ -34,13 +34,14 @@ python3 server.py
 
 Codex 和 Claude Code 均有真实调用证据。WorkBuddy 通过应用自带 CodeBuddy CLI 接入：DeepSeek 与 GLM 文本请求已完成，工具执行仍未通过验收，因此不能参与源码文件任务。未把原始 DSML 工具文本当作已完成操作，也没有验证 Claude 型号在 WorkBuddy 中可用。Key 保存在 `~/.workbuddy/api-key`（0600），不入数据库或回显。
 
-实际金额预算、复杂并行协作、PDF/DOCX、资料删除与重索引、完整 Token 预扣预算、账户头像等仍未完成。AT-19～30 尚未全部完成负责人验收；四种宽度深浅色截图只覆盖此次源码授权界面，不代表所有页面完整回归。CLI 自身基础指令较长，小任务也有上下文开销。
+实际金额预算、复杂并行协作、PDF/DOCX、资料删除与重索引、完整 Token 预扣预算、账户头像等仍未完成。G5 工程验收覆盖 AT-19～30，WorkBuddy 按已验证文本能力和文件任务阻止策略验收，负责人最终产品验收仍待进行。设置、员工多选、项目侧栏、长对话均有四种宽度深浅色截图；故障界面使用独立合成数据，真实宿主证据另列，不将测试替身当作模型调用。CLI 自身基础指令较长，小任务也有上下文开销。
 
 ## 验证与回滚
 
 ```
 python3 -m unittest discover -s tests -v
 node --check app.js
+node --test tests/frontend.test.cjs
 python3 -m py_compile server.py runtime.py file_tools.py v12.py project_files.py
 ```
 

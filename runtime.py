@@ -254,6 +254,7 @@ class ClaudeAdapter:
             if cancelled():raise InterruptedError('用户已停止')
             out,err=p.communicate(input=prompt,timeout=300)
             if cancelled():raise InterruptedError('用户已停止')
+            if p.returncode!=0:raise RuntimeError('Claude Code 进程异常退出，请检查连接与运行状态')
             try:value=json.loads(out[out.find('{'):out.rfind('}')+1])
             except ValueError:raise RuntimeError('Claude Code 未返回可解析结果，请检查连接')
             if not isinstance(value,dict) or value.get('is_error'):raise RuntimeError('Claude Code 调用失败，请检查连接、额度与型号权限')
@@ -408,7 +409,7 @@ class WorkBuddyAdapter:
                             initialized=True
                             on_event({'type':'tools.checked','role':role,'tools':actual})
                         if item.get('type')=='result':value=item
-            p.wait(timeout=5)
+            if p.wait(timeout=5)!=0:raise RuntimeError('WorkBuddy 进程异常退出，请检查连接与运行状态')
             if cancelled():raise InterruptedError('用户已停止')
             if not initialized or not isinstance(value,dict):raise RuntimeError('WorkBuddy 未返回工具范围和完成结果，请检查登录与连接')
             if value.get('is_error') or value.get('subtype')=='error':raise RuntimeError('WorkBuddy 调用失败，请检查登录、额度与型号权限')

@@ -323,6 +323,16 @@ class V12Tests(unittest.TestCase):
         # Internal shutdown paths call without a project and stay trusted.
         self.assertIsNotNone(self.app.cancel(run['id']))
 
+    def test_cancel_stops_every_host_process_for_the_run(self):
+        from unittest.mock import Mock
+        self.fake.block_at=1
+        self.app.claude.cancel=Mock();self.app.workbuddy.cancel=Mock()
+        run=self.start();self.assertTrue(self.fake.blocked.wait(3))
+        result=self.app.cancel(run['id'],self.pid)
+        self.assertEqual(result['status'],'cancelled')
+        self.app.claude.cancel.assert_called_once_with(run['id'])
+        self.app.workbuddy.cancel.assert_called_once_with(run['id'])
+
     def test_cancel_http_requires_project_id(self):
         # Drive the real handler instead of asserting on source text.
         import threading, urllib.error, urllib.request
@@ -487,6 +497,56 @@ class V12Tests(unittest.TestCase):
         Projects(self.app)
         self.assertEqual(len(self.app.projects.messages(link['conversationId'])), 2)
 
+
+    def test_account_rotation_rejects_previous_model_verification(self):
+        self.fake.account_identity=lambda:{'accountId':'another-account','configId':'cfg-test'}
+        with self.assertRaises(ValueError):self.start()
+        self.assertEqual(self.fake.calls,[])
+
+    def test_same_model_on_another_host_does_not_inherit_verification(self):
+        self.app.claude=FakeV12();settings=settings_v2()
+        settings['managerModelByHost']['claude']={'model':MANAGER,'effort':'low'}
+        self.app.store.put('settings','v2',settings)
+        with self.assertRaises(ValueError):self.start(managerHost='claude')
+        self.assertEqual(self.app.claude.calls,[])
+
+    def test_identity_change_after_manager_blocks_employee(self):
+        original=self.fake.call
+        def changed(*args,**kwargs):
+            value=original(*args,**kwargs)
+            self.fake.account_identity=lambda:{'accountId':'changed','configId':'cfg-test'}
+            return value
+        self.fake.responses=[delegate(('codex','读取资料'))];self.fake.call=changed
+        run=self.wait(self.start(allowedEmployees=['codex'])['id'])
+        self.assertEqual(run['status'],'failed');self.assertEqual(len(self.fake.calls),1)
+        self.assertIn('登录身份',run['error'])
+
+    def test_over_200_legacy_runs_page_without_loss_or_mutation(self):
+        import hashlib
+        records=[]
+        for n in range(215):
+            record={'id':'legacy-%03d'%n,'workspace':self.pid,'parent':'legacy-%03d'%(n-1) if n else None,'text':'legacy question %d'%n,'answer':'legacy answer %d'%n,'status':'completed','created':'2026-10-28T00:%03d'%n,'calls':[],'files':[],'events':[]}
+            records.append(('run',record['id'],record))
+        self.app.store.put_many(records)
+        before={key:hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest() for _,key,value in records}
+        self.app.projects=Projects(self.app)
+        cid=self.app.store.get('run_link','legacy-000')['conversationId'];messages=[];cursor=None
+        while True:
+            page=self.app.projects.page(cid,cursor);messages.extend(page['messages']);cursor=page['before']
+            if cursor is None:break
+        self.assertEqual(len(messages),430);self.assertEqual(len({m['id'] for m in messages}),430)
+        self.app.projects.migrate()
+        for key,sha in before.items():self.assertEqual(hashlib.sha256(json.dumps(self.app.store.get('run',key),sort_keys=True).encode()).hexdigest(),sha)
+
+    def test_cycle_orphan_and_cross_project_parents_are_preserved(self):
+        other=self.app.projects.create_project('other')['id']
+        definitions=[('cycle-a',self.pid,'cycle-b'),('cycle-b',self.pid,'cycle-a'),('orphan',self.pid,'absent'),('cross',self.pid,'foreign'),('foreign',other,None)]
+        for ident,pid,parent in definitions:self.app.store.put('run',ident,{'id':ident,'workspace':pid,'parent':parent,'text':ident,'answer':'saved','created':'test','status':'completed'})
+        self.app.projects=Projects(self.app)
+        self.assertEqual(self.app.store.get('run_link','cycle-a')['conversationId'],self.app.store.get('run_link','cycle-b')['conversationId'])
+        for ident,_,_ in definitions:self.assertIsNotNone(self.app.store.get('run_link',ident))
+        reasons={w['reason'] for w in self.app.store.get('migration','v12')['warnings']}
+        self.assertIn('parent_cycle',reasons);self.assertIn('missing_or_cross_project_parent',reasons)
 
 if __name__ == '__main__':
     unittest.main()

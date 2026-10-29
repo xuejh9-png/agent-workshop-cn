@@ -189,7 +189,7 @@ class Studio:
             if not run:raise ValueError('任务不存在')
             if run['status'] in TERMINAL:return run
             self.cancelled.add(ident)
-        self.adapter.cancel(ident)
+        for host in self.hosts:self.adapter_for(host).cancel(ident)
         worker=self.workers.get(ident)
         if worker:worker.join(timeout=5)
         if worker and worker.is_alive():

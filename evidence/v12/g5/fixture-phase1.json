@@ -1,0 +1,52 @@
+{
+  "synthetic": true,
+  "runs": [
+    {
+      "id": "30775bcf86644779aeadfb59880558b8",
+      "text": "G5项目C历史标记",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "32dfe24e7a454ffbb1d7580bd4447415",
+      "text": "G5_LONG 断网期间后台继续、恢复后不得重复",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "6a472dd469d147a5858efc0f12fa9831",
+      "text": "G5项目B历史标记",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "6fd1b51d6da746308d6884f2847a89dd",
+      "text": "G5延迟提交A",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "85e58e3be0404c13b3175a5906d1020d",
+      "text": "G5修复验证A",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "b6a2bf6c7b084c15ac74a8fe0641b257",
+      "text": "G5项目A历史标记",
+      "status": "completed",
+      "calls": 1
+    },
+    {
+      "id": "fc0d132d8b224f3c89fa9c81a0a7abce",
+      "text": "G5_LONG 刷新断连验收",
+      "status": "completed",
+      "calls": 1
+    }
+  ],
+  "callCounts": {
+    "codex": 7,
+    "claude": 0,
+    "workbuddy": 0
+  }
+}

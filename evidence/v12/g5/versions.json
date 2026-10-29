@@ -1,0 +1,14 @@
+{
+  "codex": {
+    "exitCode": 0,
+    "version": "codex-cli 0.165.0-alpha.1.2"
+  },
+  "claude": {
+    "exitCode": 0,
+    "version": "2.1.308 (Claude Code)"
+  },
+  "workbuddy": {
+    "exitCode": 0,
+    "version": "2.165.0"
+  }
+}

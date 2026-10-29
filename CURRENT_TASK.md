@@ -1,8 +1,8 @@
-> **暂停交接：先读 [HANDOFF_TO_OPUS_V12.md](./HANDOFF_TO_OPUS_V12.md)。当前分支为未验收 WIP，独审有3项待修问题，不代表G0–G5已通过。**
+> **G5 本机工程验收完成，待负责人产品验收。** 最新固定被测实现 `45e9725a8be3381c1ac7d87418f346c99d7c8b8f`，逐项证据见 `evidence/v12/g5/REPORT.md`。原暂停交接保留作历史资料，WorkBuddy文件工具限制继续生效。
 
 # 当前任务｜Agent Studio v1.2：项目经理、员工授权、项目对话与真实协作
 
-> 2026-10-28｜状态：REQUIREMENTS READY / IMPLEMENTATION NOT VERIFIED
+> 2026-10-29｜状态：G5 LOCAL_ENGINEERING_VERIFIED / HUMAN_ACCEPTANCE_PENDING
 > 工程仓库：`xuejh9-png/agent-workshop-cn`（private）。本文件是工程入口，**不是另一份产品决策**。
 > 正式权威：`xuejh9-png/my-ai-context`，仅用原 Issue #10 协作。
 

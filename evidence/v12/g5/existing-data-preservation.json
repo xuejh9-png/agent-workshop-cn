@@ -1,0 +1,27 @@
+{
+  "run": {
+    "baselineCount": 13,
+    "changedCount": 0,
+    "missingCount": 0
+  },
+  "workspace": {
+    "baselineCount": 2,
+    "changedCount": 0,
+    "missingCount": 0
+  },
+  "project": {
+    "baselineCount": 2,
+    "changedCount": 0,
+    "missingCount": 0
+  },
+  "message": {
+    "baselineCount": 32,
+    "changedCount": 0,
+    "missingCount": 0
+  },
+  "run_link": {
+    "baselineCount": 13,
+    "changedCount": 0,
+    "missingCount": 0
+  }
+}

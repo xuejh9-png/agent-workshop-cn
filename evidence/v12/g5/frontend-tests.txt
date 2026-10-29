@@ -1,0 +1,20 @@
+✔ concurrent old-token requests both retry once after a server restart (2.862125ms)
+✔ same-text retry in another conversation receives a new context and request ID (0.647166ms)
+✔ ambiguous network failure in the same context keeps the same request ID (0.417125ms)
+✔ late submission response preserves another project draft and cannot duplicate submission (0.4175ms)
+✔ reviewSource does not reopen a dismissed or replaced panel (0.480959ms)
+✔ cancelSourceReview does not reopen a dismissed or replaced panel (0.927875ms)
+✔ applySource does not reopen a dismissed or replaced panel (0.380042ms)
+✔ bindSource does not reopen a dismissed or replaced panel (0.401125ms)
+✔ a delayed run response cannot revert a newer terminal state (0.377541ms)
+✔ unread steps from another conversation do not trigger endless polling (0.441125ms)
+✔ chooseSource invalidates an outstanding bind without losing the new selection (0.690917ms)
+✔ clearSource invalidates an outstanding bind without losing the new selection (0.486584ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.126416

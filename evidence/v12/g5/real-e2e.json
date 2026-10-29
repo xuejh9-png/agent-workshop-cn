@@ -1,0 +1,208 @@
+{
+  "identity": {
+    "id": "4a470395f85a492c9863c1ce3a3e453d",
+    "status": "completed",
+    "effort": "low",
+    "duplicateRequestSameId": true,
+    "calls": [
+      {
+        "employee": null,
+        "role": "coordinator",
+        "sessionId": "01a186fe-1d07-7821-b269-e8d8439ee278",
+        "requestedModel": "gpt-6.1-sol",
+        "actualModel": null,
+        "usage": {
+          "input_tokens": 15386,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 65,
+          "reasoning_output_tokens": 0
+        },
+        "costUSD": null
+      }
+    ],
+    "stepStates": [],
+    "answerChecks": {
+      "containsProductName": true,
+      "containsManagerRole": true,
+      "containsTestMarker": false
+    },
+    "wallSeconds": 23.0
+  },
+  "workbuddyManager": {
+    "id": "bf80922507fb471d85ef7a51144838d9",
+    "status": "completed",
+    "effort": "low",
+    "requestedModel": "deepseek-v4.1-flash",
+    "calls": [
+      {
+        "employee": null,
+        "role": "coordinator",
+        "sessionId": "01a18700-be4a-7fd3-a0d4-8d50ed82acaf",
+        "requestedModel": "deepseek-v4.1-flash",
+        "actualModel": "deepseek-v4.1-flash",
+        "usage": {
+          "input_tokens": 6444,
+          "output_tokens": 133,
+          "cached_input_tokens": 2816
+        },
+        "costUSD": 0
+      }
+    ],
+    "stepStates": [],
+    "answerChecks": {
+      "containsProductName": true,
+      "containsManagerRole": true,
+      "containsTestMarker": false
+    },
+    "wallSeconds": 5.0
+  },
+  "dualEmployee": {
+    "id": "a6a78f095a8b46d9a1530f97aed832f6",
+    "status": "completed",
+    "calls": [
+      {
+        "employee": null,
+        "role": "coordinator",
+        "sessionId": "01a18700-e604-7af2-8e0c-d8798f000ed5",
+        "requestedModel": "gpt-6.1-sol",
+        "actualModel": null,
+        "usage": {
+          "input_tokens": 15483,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 170,
+          "reasoning_output_tokens": 0
+        },
+        "costUSD": null
+      },
+      {
+        "employee": "codex",
+        "role": "executor",
+        "sessionId": "01a18701-730c-7fe2-a7d1-8f5ed74cdf9c",
+        "requestedModel": "gpt-6.1-sol",
+        "actualModel": null,
+        "usage": {
+          "input_tokens": 46009,
+          "cached_input_tokens": 38528,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 307,
+          "reasoning_output_tokens": 73
+        },
+        "costUSD": null
+      },
+      {
+        "employee": "claude",
+        "role": "executor",
+        "sessionId": "821616f8-16ee-4585-abc8-6f67c3c00f72",
+        "requestedModel": "opus",
+        "actualModel": "claude-opus-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 931,
+          "cached_input_tokens": 0
+        },
+        "costUSD": 0.030393
+      }
+    ],
+    "stepStates": [
+      {
+        "step": 1,
+        "employee": "codex",
+        "status": "completed"
+      },
+      {
+        "step": 2,
+        "employee": "claude",
+        "status": "completed"
+      }
+    ],
+    "answerChecks": {
+      "containsProductName": false,
+      "containsManagerRole": false,
+      "containsTestMarker": true
+    },
+    "fileOperations": [
+      {
+        "action": "read",
+        "path": "g5-check.md",
+        "bytes": 162
+      }
+    ],
+    "wallSeconds": 267.0
+  },
+  "claudeStop": {
+    "id": "8adab1d3fd9245f987044edbbd9d0ac4",
+    "status": "cancelled",
+    "processAliveAfterCancel": false,
+    "wallSeconds": 0.0
+  },
+  "claudeManager": {
+    "id": "32beba9279bf4ac9aac74a24094eac7e",
+    "status": "completed",
+    "effort": "low",
+    "calls": [
+      {
+        "employee": null,
+        "role": "coordinator",
+        "sessionId": "8051eb42-6a99-4300-866b-b3e3bf83345d",
+        "requestedModel": "opus",
+        "actualModel": "claude-opus-5-5",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 198,
+          "cached_input_tokens": 0
+        },
+        "costUSD": 0.016388
+      }
+    ],
+    "stepStates": [],
+    "answerChecks": {
+      "containsProductName": true,
+      "containsManagerRole": true,
+      "containsTestMarker": false
+    },
+    "wallSeconds": 24.0
+  },
+  "workbuddyStop": {
+    "id": "e6d69af67fcf44a6b80be14631b5b440",
+    "status": "cancelled",
+    "processAliveAfterCancel": false,
+    "wallSeconds": 0.0
+  },
+  "codexStop": {
+    "id": "8add3413663f4885b3a6192944b9ac03",
+    "status": "cancelled",
+    "processAliveAfterCancel": false,
+    "wallSeconds": 0.0
+  },
+  "finalSupportedRuntime": {
+    "id": "e1688cdb559c4c52ac83cad28e5382ac",
+    "status": "completed",
+    "effort": "high",
+    "calls": [
+      {
+        "employee": null,
+        "role": "coordinator",
+        "sessionId": "01a18724-5730-7c23-aa90-d3248d7140e3",
+        "requestedModel": "gpt-6.1-sol",
+        "actualModel": null,
+        "usage": {
+          "input_tokens": 15408,
+          "cached_input_tokens": 15232,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 62,
+          "reasoning_output_tokens": 0
+        },
+        "costUSD": null
+      }
+    ],
+    "stepStates": [],
+    "answerChecks": {
+      "containsProductName": true,
+      "containsManagerRole": true,
+      "containsTestMarker": false
+    },
+    "wallSeconds": 44.0
+  }
+}

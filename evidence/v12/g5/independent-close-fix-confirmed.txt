@@ -1,0 +1,5 @@
+本项 P2 修复充分（基于所给代码静态确认）。
+
+chooseSource、clearSource 均同步调用 dismissModal，递增 panelRequest，使在途 bindSource 保存的 intent 失效；旧请求成功后不会重置 sourceSelection 或进入 sourceDirectory，失败后也不会回写错误。原生 Escape 的 cancel 同样使旧意图失效。
+
+12 项测试通过为你提供的结果，本轮未运行工具、未独立复验。就该特定竞态，可判定修复通过。

@@ -1,0 +1,23 @@
+{
+  "originalCodexProfile": {
+    "model": "gpt-6.1-sol",
+    "effort": "high"
+  },
+  "observedRealRunSettingsRevision": 6,
+  "observedRealRunProfile": {
+    "model": "gpt-6.1-sol",
+    "effort": "low"
+  },
+  "observedCallEffort": "low",
+  "restoredDefaultHost": "codex",
+  "restoredCodexProfile": {
+    "model": "gpt-6.1-sol",
+    "effort": "high"
+  },
+  "validatedClaudeManagerProfile": {
+    "model": "opus",
+    "effort": "low"
+  },
+  "finalRuntime": "Python 3.13.12",
+  "testedSource": "45e9725a8be3381c1ac7d87418f346c99d7c8b8f"
+}

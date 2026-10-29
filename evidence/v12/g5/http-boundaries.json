@@ -1,0 +1,56 @@
+[
+  {
+    "case": "wrong-project-run",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "wrong-workspace-file",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "traversal-file",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "hidden-file",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "traversal-upload",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "invalid-token-no-project-created",
+    "expected": 403,
+    "actual": 403,
+    "pass": true
+  },
+  {
+    "case": "foreign-origin",
+    "expected": 403,
+    "actual": 403,
+    "pass": true
+  },
+  {
+    "case": "client-model-override",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  },
+  {
+    "case": "cross-project-source-apply",
+    "expected": 400,
+    "actual": 400,
+    "pass": true
+  }
+]

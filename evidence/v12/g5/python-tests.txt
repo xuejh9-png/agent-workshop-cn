@@ -1,0 +1,126 @@
+test_ancestor_symlink_rejected (test_file_tools.ScopeTests.test_ancestor_symlink_rejected) ... ok
+test_no_overwrite (test_file_tools.ScopeTests.test_no_overwrite) ... ok
+test_no_write_without_grant (test_file_tools.ScopeTests.test_no_write_without_grant) ... ok
+test_open_descriptor_survives_ancestor_replacement (test_file_tools.ScopeTests.test_open_descriptor_survives_ancestor_replacement) ... ok
+test_read_create_real_text (test_file_tools.ScopeTests.test_read_create_real_text) ... ok
+test_reject_escape_hidden_and_binary (test_file_tools.ScopeTests.test_reject_escape_hidden_and_binary) ... ok
+test_root_symlink_rejected (test_file_tools.ScopeTests.test_root_symlink_rejected) ... ok
+test_size_limit (test_file_tools.ScopeTests.test_size_limit) ... ok
+test_symlink_and_hardlink_files_rejected (test_file_tools.ScopeTests.test_symlink_and_hardlink_files_rejected) ... ok
+test_apply_and_revert_are_idempotent (test_project_files.ProjectFilesTests.test_apply_and_revert_are_idempotent) ... ok
+test_backup_failure_retains_displaced_original (test_project_files.ProjectFilesTests.test_backup_failure_retains_displaced_original) ... ok
+test_concurrent_edit_blocks_apply (test_project_files.ProjectFilesTests.test_concurrent_edit_blocks_apply) ... ok
+test_concurrent_edit_blocks_revert (test_project_files.ProjectFilesTests.test_concurrent_edit_blocks_revert) ... ok
+test_crash_after_replace_is_reconciled (test_project_files.ProjectFilesTests.test_crash_after_replace_is_reconciled) ... ok
+test_cross_project_cannot_read_or_apply_proposal (test_project_files.ProjectFilesTests.test_cross_project_cannot_read_or_apply_proposal) ... ok
+test_directory_sync_failure_reconciles_completed_write (test_project_files.ProjectFilesTests.test_directory_sync_failure_reconciles_completed_write) ... ok
+test_fresh_readonly_review_is_required_before_original_write (test_project_files.ProjectFilesTests.test_fresh_readonly_review_is_required_before_original_write) ... ok
+test_hidden_dependencies_and_credentials_are_excluded (test_project_files.ProjectFilesTests.test_hidden_dependencies_and_credentials_are_excluded) ... ok
+test_invalid_file_selection_is_rejected (test_project_files.ProjectFilesTests.test_invalid_file_selection_is_rejected) ... ok
+test_listing_does_not_claim_files_were_read (test_project_files.ProjectFilesTests.test_listing_does_not_claim_files_were_read) ... ok
+test_missing_or_reused_review_session_does_not_approve (test_project_files.ProjectFilesTests.test_missing_or_reused_review_session_does_not_approve) ... ok
+test_new_file_inode_blocks_apply_even_with_same_content (test_project_files.ProjectFilesTests.test_new_file_inode_blocks_apply_even_with_same_content) ... ok
+test_original_inode_is_retained_after_successful_write (test_project_files.ProjectFilesTests.test_original_inode_is_retained_after_successful_write) ... ok
+test_pending_run_cannot_freeze_incomplete_diffs (test_project_files.ProjectFilesTests.test_pending_run_cannot_freeze_incomplete_diffs) ... ok
+test_rebinding_revokes_old_proposals (test_project_files.ProjectFilesTests.test_rebinding_revokes_old_proposals) ... ok
+test_replaced_directory_is_rejected (test_project_files.ProjectFilesTests.test_replaced_directory_is_rejected) ... ok
+test_requires_review_and_exact_hash (test_project_files.ProjectFilesTests.test_requires_review_and_exact_hash) ... ok
+test_review_rejection_blocks_original_write (test_project_files.ProjectFilesTests.test_review_rejection_blocks_original_write) ... ok
+test_rollback_swap_failure_retains_concurrent_edit (test_project_files.ProjectFilesTests.test_rollback_swap_failure_retains_concurrent_edit) ... ok
+test_save_at_last_check_is_restored_and_not_lost (test_project_files.ProjectFilesTests.test_save_at_last_check_is_restored_and_not_lost) ... ok
+test_snapshot_proposal_never_changes_original (test_project_files.ProjectFilesTests.test_snapshot_proposal_never_changes_original) ... ok
+test_snapshot_restricts_unselected_files_and_writes (test_project_files.ProjectFilesTests.test_snapshot_restricts_unselected_files_and_writes) ... ok
+test_symlink_and_hardlink_are_rejected (test_project_files.ProjectFilesTests.test_symlink_and_hardlink_are_rejected) ... ok
+test_claude_stdin_and_nonzero_exit (test_runtime_hosts.HostAdapterTests.test_claude_stdin_and_nonzero_exit) ... ok
+test_key_writer_refuses_links_without_touching_target (test_runtime_hosts.HostAdapterTests.test_key_writer_refuses_links_without_touching_target) ... ok
+test_rotated_claude_credentials_invalidate_verification (test_runtime_hosts.HostAdapterTests.test_rotated_claude_credentials_invalidate_verification) ... ok
+test_rotated_credentials_invalidate_workbuddy_verification (test_runtime_hosts.HostAdapterTests.test_rotated_credentials_invalidate_workbuddy_verification) ... ok
+test_saved_key_is_private_and_does_not_echo (test_runtime_hosts.HostAdapterTests.test_saved_key_is_private_and_does_not_echo) ... ok
+test_workbuddy_array_returns_only_terminal_result (test_runtime_hosts.HostAdapterTests.test_workbuddy_array_returns_only_terminal_result) ... /Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_workbuddy_array_without_completion_is_failure (test_runtime_hosts.HostAdapterTests.test_workbuddy_array_without_completion_is_failure) ... /Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=8 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_workbuddy_empty_and_failed_results_are_not_success (test_runtime_hosts.HostAdapterTests.test_workbuddy_empty_and_failed_results_are_not_success) ... /Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=9 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=10 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_workbuddy_nonzero_exit_does_not_report_success (test_runtime_hosts.HostAdapterTests.test_workbuddy_nonzero_exit_does_not_report_success) ... /Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_workbuddy_single_result_stays_compatible (test_runtime_hosts.HostAdapterTests.test_workbuddy_single_result_stays_compatible) ... /Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=8 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_workbuddy_unexecuted_tool_markup_fails (test_runtime_hosts.HostAdapterTests.test_workbuddy_unexecuted_tool_markup_fails) ... ok
+test_cancel_waits_worker_and_keeps_state (test_studio.StudioTests.test_cancel_waits_worker_and_keeps_state) ... ok
+test_cross_workspace_parent_rejected (test_studio.StudioTests.test_cross_workspace_parent_rejected) ... ok
+test_direct_answer_one_model_no_files (test_studio.StudioTests.test_direct_answer_one_model_no_files) ... ok
+test_effort_rejected (test_studio.StudioTests.test_effort_rejected) ... ok
+test_explicit_model_and_effort_override (test_studio.StudioTests.test_explicit_model_and_effort_override) ... ok
+test_history_only_parent_chain (test_studio.StudioTests.test_history_only_parent_chain) ... ok
+test_model_failure_is_persisted (test_studio.StudioTests.test_model_failure_is_persisted) ... ok
+test_one_active_task (test_studio.StudioTests.test_one_active_task) ... ok
+test_restart_marks_interrupted_without_retry (test_studio.StudioTests.test_restart_marks_interrupted_without_retry) ... ok
+test_unsupported_engine_rejected (test_studio.StudioTests.test_unsupported_engine_rejected) ... ok
+test_unverified_or_unknown_model_no_call (test_studio.StudioTests.test_unverified_or_unknown_model_no_call) ... ok
+test_write_scope_is_per_run (test_studio.StudioTests.test_write_scope_is_per_run) ... ok
+test_account_rotation_rejects_previous_model_verification (test_v12.V12Tests.test_account_rotation_rejects_previous_model_verification) ... ok
+test_cancel_http_requires_project_id (test_v12.V12Tests.test_cancel_http_requires_project_id) ... ok
+test_cancel_keeps_completed_step_and_marks_stopped_step (test_v12.V12Tests.test_cancel_keeps_completed_step_and_marks_stopped_step) ... ok
+test_cancel_requires_owning_project (test_v12.V12Tests.test_cancel_requires_owning_project) ... ok
+test_cancel_stops_every_host_process_for_the_run (test_v12.V12Tests.test_cancel_stops_every_host_process_for_the_run) ... ok
+test_conversation_cannot_be_reused_across_projects (test_v12.V12Tests.test_conversation_cannot_be_reused_across_projects) ... ok
+test_conversation_paging_is_isolated (test_v12.V12Tests.test_conversation_paging_is_isolated) ... ok
+test_cycle_orphan_and_cross_project_parents_are_preserved (test_v12.V12Tests.test_cycle_orphan_and_cross_project_parents_are_preserved) ... ok
+test_delegate_without_allowed_employees_blocks_without_call (test_v12.V12Tests.test_delegate_without_allowed_employees_blocks_without_call) ... ok
+test_each_employee_step_uses_its_own_adapter (test_v12.V12Tests.test_each_employee_step_uses_its_own_adapter) ... ok
+test_empty_manager_answer_is_a_failure_not_blank_success (test_v12.V12Tests.test_empty_manager_answer_is_a_failure_not_blank_success) ... ok
+test_file_routes_require_owning_project (test_v12.V12Tests.test_file_routes_require_owning_project) ... ok
+test_identity_change_after_manager_blocks_employee (test_v12.V12Tests.test_identity_change_after_manager_blocks_employee) ... ok
+test_later_failure_keeps_earlier_step_output (test_v12.V12Tests.test_later_failure_keeps_earlier_step_output) ... ok
+test_legacy_run_migrates_into_conversation (test_v12.V12Tests.test_legacy_run_migrates_into_conversation) ... ok
+test_manager_cannot_plan_unallowed_employee (test_v12.V12Tests.test_manager_cannot_plan_unallowed_employee) ... ok
+test_manager_direct_answer_uses_one_call (test_v12.V12Tests.test_manager_direct_answer_uses_one_call) ... ok
+test_migration_is_idempotent (test_v12.V12Tests.test_migration_is_idempotent) ... ok
+test_missing_step_message_is_reconciled_on_read (test_v12.V12Tests.test_missing_step_message_is_reconciled_on_read) ... ok
+test_non_dict_manager_reply_fails_run_and_unblocks_queue (test_v12.V12Tests.test_non_dict_manager_reply_fails_run_and_unblocks_queue) ... ok
+test_over_200_legacy_runs_page_without_loss_or_mutation (test_v12.V12Tests.test_over_200_legacy_runs_page_without_loss_or_mutation) ... ok
+test_plan_over_four_steps_rejected_before_any_employee (test_v12.V12Tests.test_plan_over_four_steps_rejected_before_any_employee) ... ok
+test_progress_returns_only_changed_runs (test_v12.V12Tests.test_progress_returns_only_changed_runs) ... ok
+test_request_fields_cannot_override_settings (test_v12.V12Tests.test_request_fields_cannot_override_settings) ... ok
+test_request_nonce_is_idempotent (test_v12.V12Tests.test_request_nonce_is_idempotent) ... ok
+test_run_for_rejects_other_project_and_unknown (test_v12.V12Tests.test_run_for_rejects_other_project_and_unknown) ... ok
+test_same_model_on_another_host_does_not_inherit_verification (test_v12.V12Tests.test_same_model_on_another_host_does_not_inherit_verification) ... ok
+test_settings_reject_unverified_model_and_unsupported_host (test_v12.V12Tests.test_settings_reject_unverified_model_and_unsupported_host) ... ok
+test_settings_revision_conflict_leaves_store_untouched (test_v12.V12Tests.test_settings_revision_conflict_leaves_store_untouched) ... ok
+test_settings_save_bumps_revision_and_is_durable (test_v12.V12Tests.test_settings_save_bumps_revision_and_is_durable) ... ok
+test_step_messages_are_reordered_by_step_number (test_v12.V12Tests.test_step_messages_are_reordered_by_step_number) ... ok
+test_step_messages_have_stable_sequence_and_no_duplicates (test_v12.V12Tests.test_step_messages_have_stable_sequence_and_no_duplicates) ... ok
+test_unsupported_manager_host_rejected_on_start (test_v12.V12Tests.test_unsupported_manager_host_rejected_on_start) ... ok
+test_workbuddy_employee_uses_its_own_adapter (test_v12.V12Tests.test_workbuddy_employee_uses_its_own_adapter) ... ok
+test_workbuddy_reports_missing_key_instead_of_pretending (test_v12.V12Tests.test_workbuddy_reports_missing_key_instead_of_pretending) ... ok
+
+----------------------------------------------------------------------
+Ran 91 tests in 2.346s
+
+OK

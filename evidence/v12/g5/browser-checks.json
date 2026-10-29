@@ -1,0 +1,396 @@
+{
+  "synthetic": true,
+  "checks": [
+    {
+      "case": "running-refresh-and-progress-disconnect",
+      "state": {
+        "messages": 4,
+        "project": "G5 项目B",
+        "stop": "停止运行",
+        "title": "G5_LONG 刷新断连验收",
+        "toast": "连接中断，恢复后会补读后台状态"
+      }
+    },
+    {
+      "case": "chat-light-1440",
+      "composer": 820,
+      "composerContent": 818,
+      "messages": 4,
+      "page": 1440,
+      "width": 1440
+    },
+    {
+      "case": "chat-light-1024",
+      "composer": 736,
+      "composerContent": 734,
+      "messages": 4,
+      "page": 1024,
+      "width": 1024
+    },
+    {
+      "case": "chat-light-768",
+      "composer": 744,
+      "composerContent": 742,
+      "messages": 4,
+      "page": 768,
+      "width": 768
+    },
+    {
+      "case": "chat-light-375",
+      "composer": 355,
+      "composerContent": 353,
+      "messages": 4,
+      "page": 375,
+      "width": 375
+    },
+    {
+      "case": "chat-dark-1440",
+      "composer": 820,
+      "composerContent": 818,
+      "messages": 4,
+      "page": 1440,
+      "width": 1440
+    },
+    {
+      "case": "chat-dark-1024",
+      "composer": 820,
+      "composerContent": 818,
+      "messages": 4,
+      "page": 1024,
+      "width": 1024
+    },
+    {
+      "case": "chat-dark-768",
+      "composer": 744,
+      "composerContent": 742,
+      "messages": 4,
+      "page": 768,
+      "width": 768
+    },
+    {
+      "case": "chat-dark-375",
+      "composer": 355,
+      "composerContent": 353,
+      "messages": 4,
+      "page": 375,
+      "width": 375
+    },
+    {
+      "case": "out-of-order-conversation-response",
+      "state": {
+        "messages": [
+          "你你G5项目B历史标记",
+          "经项目经理我是 Agent Studio 的项目经理。G5项目B历史标记已结束运行与用量 →"
+        ],
+        "project": "G5 项目B"
+      }
+    },
+    {
+      "case": "late-file-preview-after-project-switch",
+      "state": {
+        "draft": "切换后不可弹出旧项目文件",
+        "drawerOpen": false,
+        "project": "G5 项目A"
+      }
+    },
+    {
+      "case": "stop-state-survives-refresh",
+      "state": {
+        "messages": 2,
+        "project": "G5 项目A",
+        "stopped": true
+      }
+    },
+    {
+      "case": "fast-long-answer-first-presentation",
+      "state": {
+        "messages": 8,
+        "note": "完成后的分段呈现 · 非实时模型 Token",
+        "visibleLength": 560
+      }
+    },
+    {
+      "case": "fast-long-answer-completed",
+      "state": {
+        "end": true,
+        "messages": 8,
+        "uniqueIds": 8,
+        "visibleLength": 4092
+      }
+    },
+    {
+      "case": "final-chat-light-1440",
+      "state": {
+        "page": 1440,
+        "sourceButtonBottom": 922.8515625,
+        "width": 1440
+      }
+    },
+    {
+      "case": "final-chat-light-1024",
+      "state": {
+        "page": 1024,
+        "sourceButtonBottom": 922.8515625,
+        "width": 1024
+      }
+    },
+    {
+      "case": "final-chat-light-768",
+      "state": {
+        "page": 768,
+        "sourceButtonBottom": 948,
+        "width": 768
+      }
+    },
+    {
+      "case": "final-chat-light-375",
+      "state": {
+        "page": 375,
+        "sourceButtonBottom": 948.8515625,
+        "width": 375
+      }
+    },
+    {
+      "case": "final-chat-dark-1440",
+      "state": {
+        "page": 1440,
+        "sourceButtonBottom": 922.8515625,
+        "width": 1440
+      }
+    },
+    {
+      "case": "final-chat-dark-1024",
+      "state": {
+        "page": 1024,
+        "sourceButtonBottom": 922.8515625,
+        "width": 1024
+      }
+    },
+    {
+      "case": "final-chat-dark-768",
+      "state": {
+        "page": 768,
+        "sourceButtonBottom": 948,
+        "width": 768
+      }
+    },
+    {
+      "case": "final-chat-dark-375",
+      "state": {
+        "page": 375,
+        "sourceButtonBottom": 948.8515625,
+        "width": 375
+      }
+    },
+    {
+      "case": "settings-dark-1440",
+      "state": {
+        "dialogWidth": 520,
+        "page": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "case": "settings-dark-1024",
+      "state": {
+        "dialogWidth": 520,
+        "page": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "case": "settings-dark-768",
+      "state": {
+        "dialogWidth": 520,
+        "page": 768,
+        "width": 768
+      }
+    },
+    {
+      "case": "settings-dark-375",
+      "state": {
+        "dialogWidth": 347,
+        "page": 375,
+        "width": 375
+      }
+    },
+    {
+      "case": "settings-light-1440",
+      "state": {
+        "dialogWidth": 520,
+        "page": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "case": "settings-light-1024",
+      "state": {
+        "dialogWidth": 520,
+        "page": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "case": "settings-light-768",
+      "state": {
+        "dialogWidth": 520,
+        "page": 768,
+        "width": 768
+      }
+    },
+    {
+      "case": "settings-light-375",
+      "state": {
+        "dialogWidth": 347,
+        "page": 375,
+        "width": 375
+      }
+    },
+    {
+      "case": "employees-light-1440",
+      "state": {
+        "dialogWidth": 0,
+        "page": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "case": "employees-light-1024",
+      "state": {
+        "dialogWidth": 0,
+        "page": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "case": "employees-light-768",
+      "state": {
+        "dialogWidth": 0,
+        "page": 768,
+        "width": 768
+      }
+    },
+    {
+      "case": "employees-light-375",
+      "state": {
+        "dialogWidth": 0,
+        "page": 375,
+        "width": 375
+      }
+    },
+    {
+      "case": "employee-popup-visible-375",
+      "state": {
+        "bottom": 792.703125,
+        "checked": 2,
+        "left": 11,
+        "right": 354,
+        "width": 375
+      }
+    },
+    {
+      "case": "employees-dark-1440",
+      "state": {
+        "dialogWidth": 0,
+        "page": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "case": "employees-dark-1024",
+      "state": {
+        "dialogWidth": 0,
+        "page": 1024,
+        "width": 1024
+      }
+    },
+    {
+      "case": "employees-dark-768",
+      "state": {
+        "dialogWidth": 0,
+        "page": 768,
+        "width": 768
+      }
+    },
+    {
+      "case": "employees-dark-375",
+      "state": {
+        "dialogWidth": 0,
+        "page": 375,
+        "width": 375
+      }
+    },
+    {
+      "case": "sidebar-dark-1440",
+      "state": {
+        "expanded": 3,
+        "page": 1440,
+        "projectCount": 3,
+        "width": 1440
+      }
+    },
+    {
+      "case": "sidebar-dark-1024",
+      "state": {
+        "expanded": 3,
+        "page": 1024,
+        "projectCount": 3,
+        "width": 1024
+      }
+    },
+    {
+      "case": "sidebar-dark-768",
+      "state": {
+        "expanded": 3,
+        "page": 768,
+        "projectCount": 3,
+        "width": 768
+      }
+    },
+    {
+      "case": "sidebar-dark-375",
+      "state": {
+        "expanded": 3,
+        "page": 375,
+        "projectCount": 3,
+        "width": 375
+      }
+    },
+    {
+      "case": "sidebar-light-1440",
+      "state": {
+        "expanded": 3,
+        "page": 1440,
+        "projectCount": 3,
+        "width": 1440
+      }
+    },
+    {
+      "case": "sidebar-light-1024",
+      "state": {
+        "expanded": 3,
+        "page": 1024,
+        "projectCount": 3,
+        "width": 1024
+      }
+    },
+    {
+      "case": "sidebar-light-768",
+      "state": {
+        "expanded": 3,
+        "page": 768,
+        "projectCount": 3,
+        "width": 768
+      }
+    },
+    {
+      "case": "sidebar-light-375",
+      "state": {
+        "expanded": 3,
+        "page": 375,
+        "projectCount": 3,
+        "width": 375
+      }
+    }
+  ]
+}

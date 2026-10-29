@@ -1,0 +1,17 @@
+{
+  "sampleCount": 1,
+  "elapsedSeconds": 49.0,
+  "calls": 1,
+  "sessionId": "01a18718-5ffc-7eb3-8d6a-9ff51871b8a7",
+  "requestedModel": "gpt-6.1-sol",
+  "usage": {
+    "input_tokens": 45714,
+    "cached_input_tokens": 38400,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 262,
+    "reasoning_output_tokens": 40
+  },
+  "hasExpectedMarker": true,
+  "textLength": 156,
+  "note": "单次CLI受限读取基线，不能据一个样本推断一般性能或费用"
+}

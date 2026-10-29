@@ -236,6 +236,41 @@ class V12Tests(unittest.TestCase):
         self.assertEqual(sorted(m['sequence'] for m in steps),
                          sorted([first['sequence'], second['sequence']]))
 
+    def test_workbuddy_reports_missing_key_instead_of_pretending(self):
+        import os
+        from unittest import mock
+        # No credentials anywhere: the host must report the real reason and stay
+        # unselectable, rather than looking connected because the app exists.
+        with mock.patch.dict(os.environ, {'HOME': self.temp.name}, clear=False):
+            for name in ('CODEBUDDY_API_KEY', 'CODEBUDDY_AUTH_TOKEN'):
+                os.environ.pop(name, None)
+            status = self.app.host_status('workbuddy')
+            self.assertFalse(status['supported'])
+            self.assertIn('API Key', status['error'])
+            body = copy.deepcopy(self.app.config.get())
+            body['employeeProfilesByHost']['workbuddy'] = {'enabled': True, 'model': 'auto', 'effort': 'medium'}
+            with self.assertRaises(ValueError):
+                self.app.config.save(body)
+
+    def test_workbuddy_employee_uses_its_own_adapter(self):
+        workbuddy = FakeV12()
+        workbuddy.catalog = lambda refresh=False: [{'id': 'auto', 'efforts': ['low', 'medium', 'high'], 'defaultEffort': 'medium'}]
+        workbuddy.calls = []
+        workbuddy.responses = ['workbuddy结果']
+        self.app.workbuddy = workbuddy
+        settings = settings_v2()
+        settings['employeeProfilesByHost']['workbuddy'] = {'enabled': True, 'model': 'auto', 'effort': 'medium'}
+        self.app.store.put('settings', 'v2', settings)
+        self.app.store.put('settings', 'verified_v2', {
+            KEY + MANAGER: {'at': 'test'}, 'workbuddy:acct-test:cfg-test:auto': {'at': 'test'}})
+        self.fake.responses = [delegate(('workbuddy', '单个任务'))]
+        run = self.wait(self.start(allowedEmployees=['workbuddy'])['id'])
+        self.assertEqual(run['status'], 'completed')
+        self.assertEqual(len(workbuddy.calls), 1)
+        self.assertEqual(workbuddy.calls[0]['model'], 'auto')
+        self.assertEqual(run['steps'][0]['employee'], 'workbuddy')
+        self.assertEqual(run['steps'][0]['text'], 'workbuddy结果')
+
     def test_each_employee_step_uses_its_own_adapter(self):
         claude = FakeV12()
         claude.catalog = lambda refresh=False: [{'id': 'opus', 'efforts': ['low', 'high'], 'defaultEffort': 'high'}]

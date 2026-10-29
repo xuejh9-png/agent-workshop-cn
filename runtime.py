@@ -263,3 +263,99 @@ class ClaudeAdapter:
         finally:
             CodexAdapter.terminate(p)
             with self.lock:self.processes.pop(run_id,None)
+
+
+WORKBUDDY_CLI='/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy-lite-wb.mjs'
+WORKBUDDY_MODELS=[
+    {'id':'auto','name':'WorkBuddy 自动','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
+    {'id':'glm-5.1','name':'GLM 5.1','efforts':['low','medium','high','xhigh'],'defaultEffort':'high','source':'CodeBuddy CLI --model'},
+    {'id':'glm-5.0-turbo','name':'GLM 5.0 Turbo','efforts':['low','medium','high'],'defaultEffort':'high','source':'CodeBuddy CLI --model'},
+    {'id':'kimi-k2.5','name':'Kimi K2.5','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
+    {'id':'minimax-m2.7','name':'MiniMax M2.7','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
+    {'id':'deepseek-v3-2-volc','name':'DeepSeek V3.2','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
+]
+
+def workbuddy_cli():
+    # The desktop app ships the CLI but does not put it on PATH. Only the
+    # bundled lite bundle is loadable; bin/codebuddy expects a dist it lacks.
+    override=os.environ.get('STUDIO_WORKBUDDY_CLI')
+    path=Path(override or WORKBUDDY_CLI)
+    if not path.is_file():raise RuntimeError('未找到 WorkBuddy 自带的 CodeBuddy CLI')
+    return str(path)
+
+def workbuddy_credentials():
+    # The key is read from the environment or from a file the user controls.
+    # It is never written into the app database, the settings API or the logs.
+    for name in ('CODEBUDDY_API_KEY','CODEBUDDY_AUTH_TOKEN'):
+        value=os.environ.get(name)
+        if value:return name,value
+    for path in (Path.home()/'.workbuddy/api-key',Path.home()/'.codebuddy/api-key'):
+        try:value=path.read_text().strip()
+        except OSError:continue
+        if value:return 'CODEBUDDY_API_KEY',value
+    settings=Path.home()/'.codebuddy/settings.json'
+    try:env=json.loads(settings.read_text()).get('env') or {}
+    except (OSError,ValueError):env={}
+    for name in ('CODEBUDDY_API_KEY','CODEBUDDY_AUTH_TOKEN'):
+        if env.get(name):return name,env[name]
+    raise RuntimeError('WorkBuddy 未配置 API Key：请把密钥写入 ~/.workbuddy/api-key（仅本人可读）')
+
+class WorkBuddyAdapter:
+    """WorkBuddy's bundled CodeBuddy CLI as an employee, with the same scoped tools."""
+    def __init__(self,data):
+        self.data=Path(data);self.processes={};self.lock=threading.RLock()
+    def catalog(self,refresh=False):return [dict(m) for m in WORKBUDDY_MODELS]
+    def identity(self):
+        workbuddy_cli();workbuddy_credentials()
+        salt=self.data/'connection-namespace'
+        if not salt.exists():
+            import secrets
+            try:
+                fd=os.open(salt,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+                with os.fdopen(fd,'w') as f:f.write(secrets.token_hex(32))
+            except FileExistsError:pass
+        namespace=salt.read_text()
+        # Bind to the installation endpoint, never to the secret itself.
+        return {'accountId':hashlib.sha256((namespace+'workbuddy:codebuddy-cli:v1').encode()).hexdigest(),'configId':'workbuddy-codebuddy-cli-v1'}
+    account_identity=identity
+    def cancel(self,run_id):
+        with self.lock:p=self.processes.get(run_id)
+        if p:CodexAdapter.terminate(p)
+    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False):
+        name,key=workbuddy_credentials();env={**os.environ,name:key}
+        audit=self.data/(run_id+'.audit.jsonl')
+        server={'command':sys.executable,'args':[str(ROOT/'file_tools.py'),'--root',str(cwd),'--audit',str(audit)]+(['--write'] if writable else [])}
+        allowed=['mcp__studio_files__list_files','mcp__studio_files__read_file']+(['mcp__studio_files__write_file'] if writable else [])
+        cmd=[shutil.which('node') or 'node',workbuddy_cli(),'-p','--output-format','json','--model',model,
+             '--effort',effort,'--max-turns','12','--strict-mcp-config',
+             '--mcp-config',json.dumps({'mcpServers':{'studio_files':server}},ensure_ascii=False),
+             '--allowedTools',*allowed,
+             '--disallowedTools','Bash','Edit','Write','Read','Glob','Grep','WebFetch','WebSearch','Task','NotebookEdit']
+        role='coordinator' if coordinator else 'executor'
+        on_event({'type':'call.started','role':role,'requestedModel':model,'effort':effort,'adapter':'codebuddy -p','sandbox':'scoped-mcp','shell':False})
+        p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=str(cwd),start_new_session=True,env=env)
+        with self.lock:self.processes[run_id]=p
+        on_event({'type':'process.started','pid':p.pid,'processGroup':p.pid,'role':role})
+        try:
+            if cancelled():raise InterruptedError('用户已停止')
+            p.stdin.write(prompt);p.stdin.close()
+            out,err=p.communicate(timeout=300)
+            if cancelled():raise InterruptedError('用户已停止')
+            combined=(out or '')+(err or '')
+            # The CLI exits 0 even when unauthenticated, so the text is the signal.
+            if 'Authentication required' in combined or 'Please use /login' in combined:
+                raise RuntimeError('WorkBuddy 未登录：请为 CodeBuddy CLI 配置 API Key 后重试')
+            try:value=json.loads(out[out.find('{'):out.rfind('}')+1])
+            except ValueError:raise RuntimeError((err or out or 'WorkBuddy 未返回可解析结果')[:300])
+            if value.get('is_error') or value.get('subtype')=='error':raise RuntimeError(str(value.get('result') or 'WorkBuddy 调用失败')[:300])
+            text=value.get('result') if isinstance(value.get('result'),str) else value.get('text')
+            if not isinstance(text,str) or not text.strip():raise RuntimeError('WorkBuddy 返回空回答')
+            usage=value.get('usage') or {}
+            models=[k for k in (value.get('modelUsage') or {})]
+            return {'text':text,'usage':{'input_tokens':usage.get('input_tokens'),'output_tokens':usage.get('output_tokens'),'cached_input_tokens':usage.get('cache_read_input_tokens')},
+                    'sessionId':value.get('session_id') or value.get('sessionId'),'requestedModel':model,'actualModel':models[0] if models else None,'role':role,'costUSD':value.get('total_cost_usd')}
+        except subprocess.TimeoutExpired:
+            raise TimeoutError('执行超过 300 秒，已停止本次进程')
+        finally:
+            CodexAdapter.terminate(p)
+            with self.lock:self.processes.pop(run_id,None)

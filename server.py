@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import urlsplit,parse_qs
 import base64, hashlib, json, os, secrets, signal, sqlite3, threading, time, uuid
 from file_tools import ScopedFiles, MAX_FILE
-from runtime import CodexAdapter,ClaudeAdapter,TERMINAL
+from runtime import CodexAdapter,ClaudeAdapter,WorkBuddyAdapter,TERMINAL
 from v12 import Configurations,Projects
 
 ROOT=Path(__file__).resolve().parent
@@ -34,7 +34,7 @@ class Store:
 class Studio:
     def __init__(self,data=DATA):
         self.data=Path(data);self.data.mkdir(mode=0o700,parents=True,exist_ok=True)
-        self.store=Store(self.data/'studio.sqlite');self.adapter=CodexAdapter(self.data);self.claude=ClaudeAdapter(self.data);self.lock=threading.RLock();self.cancelled=set();self.workers={};self.stopping=False
+        self.store=Store(self.data/'studio.sqlite');self.adapter=CodexAdapter(self.data);self.claude=ClaudeAdapter(self.data);self.workbuddy=WorkBuddyAdapter(self.data);self.lock=threading.RLock();self.cancelled=set();self.workers={};self.stopping=False
         self.token=secrets.token_urlsafe(32)
         # A service restart cannot resurrect a native process that no longer exists.
         for run in self.store.all('run'):
@@ -51,10 +51,11 @@ class Studio:
         return self.data/'workspaces'/ident
     def settings(self):return self.store.get('settings','default',{'coordinatorModel':None,'coordinatorEffort':'low','executorModel':None,'executorEffort':'low','maxCalls':2})
     def verified(self):return self.store.get('settings','verified',{})
-    hosts=('codex','claude')
+    hosts=('codex','claude','workbuddy')
     def adapter_for(self,host='codex'):
         if host=='codex':return self.adapter
         if host=='claude':return self.claude
+        if host=='workbuddy':return self.workbuddy
         raise ValueError('该宿主尚未接入受控调用')
     def validate_model(self,model,effort,require_verified=True,host='codex'):
         candidate=next((m for m in self.adapter_for(host).catalog() if m['id']==model),None)
@@ -212,7 +213,10 @@ class Studio:
     def host_status(self,host):
         name={'codex':'Codex','claude':'Claude Code','workbuddy':'WorkBuddy'}[host]
         error=None
-        for attempt in range(3):
+        # Only the CLI-backed hosts can fail transiently at startup; a missing
+        # WorkBuddy key is a configuration fact, not something to retry.
+        attempts=3 if host in ('codex','claude') else 1
+        for attempt in range(attempts):
             try:
                 identity=self.config.identity(host);models=self.adapter_for(host).catalog()
                 self.host_cache=[host,identity,models]
@@ -221,14 +225,15 @@ class Studio:
                 # A just-started CLI can refuse the first probe; one transient
                 # failure must not tell the user their host is not connected.
                 error=str(exc)[:200]
-                if attempt<2:time.sleep(1.5+attempt)
+                if attempt<attempts-1:time.sleep(1.5+attempt)
         cached=getattr(self,'host_cache',None)
         if cached and cached[0]==host:
             return {'id':host,'name':name,'supported':True,'identity':cached[1],'models':cached[2],'error':None,'stale':True}
         return {'id':host,'name':name,'supported':False,'identity':None,'models':[],'error':error}
     def boot_v12(self):
-        codex=self.host_status('codex');claude=self.host_status('claude')
-        return {'activeRuns':[r for r in self.store.all('run') if r['status'] not in TERMINAL],'schemaVersion':2,'projects':self.store.all('project'),'conversations':self.projects.listing()[:100],'settings':self.config.get(),'models':codex['models'],'catalogByHost':{'codex':codex['models'],'claude':claude['models'],'workbuddy':[]},'verification':self.config.verified(),'connection':codex['identity'],'connectionError':codex['error'],'connections':{'codex':codex['identity'],'claude':claude['identity']},'hostErrors':{'codex':codex['error'],'claude':claude['error']},'hosts':[{'id':'codex','name':'Codex','supported':codex['supported'],'reason':codex['error']},{'id':'claude','name':'Claude Code','supported':claude['supported'],'reason':claude['error']},{'id':'workbuddy','name':'WorkBuddy','supported':False,'reason':'桌面接口和型号切换未验证'}]}
+        codex=self.host_status('codex');claude=self.host_status('claude');workbuddy=self.host_status('workbuddy')
+        status={h['id']:h for h in (codex,claude,workbuddy)}
+        return {'activeRuns':[r for r in self.store.all('run') if r['status'] not in TERMINAL],'schemaVersion':2,'projects':self.store.all('project'),'conversations':self.projects.listing()[:100],'settings':self.config.get(),'models':codex['models'],'catalogByHost':{k:v['models'] for k,v in status.items()},'verification':self.config.verified(),'connection':codex['identity'],'connectionError':codex['error'],'connections':{k:v['identity'] for k,v in status.items()},'hostErrors':{k:v['error'] for k,v in status.items()},'hosts':[{'id':k,'name':v['name'],'supported':v['supported'],'reason':v['error']} for k,v in status.items()]}
     def start_v12(self,body):
         with self.lock:
             if self.stopping:raise ValueError('服务正在停止')

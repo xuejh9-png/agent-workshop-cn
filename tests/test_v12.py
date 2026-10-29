@@ -191,6 +191,27 @@ class V12Tests(unittest.TestCase):
         self.app.store.put('run', 'legacy', legacy)
         self.assertEqual(self.app.run_for('legacy', self.pid)['id'], 'legacy')
 
+    def test_cancel_requires_owning_project(self):
+        run = self.wait(self.start(text='机密内容')['id'])
+        other = self.app.projects.create_project('别的项目')
+        # Another project must not read or stop this run through /api/cancel.
+        with self.assertRaises(ValueError):
+            self.app.cancel(run['id'], other['id'])
+        still = self.app.store.get('run', run['id'])
+        self.assertEqual(still['status'], 'completed')
+        result = self.app.cancel(run['id'], self.pid)
+        self.assertNotIn('机密内容', json.dumps(result.get('error') or ''))
+        self.assertEqual(result['id'], run['id'])
+        # Internal shutdown paths call without a project and stay trusted.
+        self.assertIsNotNone(self.app.cancel(run['id']))
+
+    def test_cancel_http_requires_project_id(self):
+        # The handler must not fall back to the internal no-pid path.
+        import inspect, server
+        src = inspect.getsource(server.Handler.do_POST)
+        self.assertIn("data.get('projectId')", src)
+        self.assertIn('缺少项目归属', src)
+
     def test_conversation_cannot_be_reused_across_projects(self):
         first = self.wait(self.start()['id'])
         other = self.app.projects.create_project('项目B')

@@ -165,7 +165,10 @@ class Studio:
             if audit.exists():
                 try:self.patch(ident,files=[json.loads(x) for x in audit.read_text().splitlines()])
                 except ValueError:pass
-    def cancel(self,ident):
+    def cancel(self,ident,pid=None):
+        # An external caller must name the owning project; internal shutdown
+        # paths pass no pid and are already trusted.
+        if pid is not None:self.run_for(ident,pid)
         with self.lock:
             run=self.store.get('run',ident)
             if not run:raise ValueError('任务不存在')
@@ -340,7 +343,10 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/runs':
                 if data.get('schemaVersion')!=2:raise ValueError('旧请求接口已停用，请刷新页面')
                 value=self.app.start_v12(data)
-            elif path=='/api/cancel':value=self.app.cancel(data.get('id'))
+            elif path=='/api/cancel':
+                # The HTTP surface never gets the trusted internal path.
+                if not data.get('projectId'):raise ValueError('缺少项目归属，请刷新页面后重试')
+                value=self.app.cancel(data.get('id'),data.get('projectId'))
             elif path=='/api/settings':
                 with self.app.lock:value=self.app.config.save(data)
             elif path=='/api/verify':value=self.app.config.verify(data.get('host'),data.get('model'),data.get('effort','low'))

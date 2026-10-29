@@ -9,6 +9,16 @@ function fn(name,next){return src.slice(src.indexOf('async function '+name),src.
 const apiSource=fn('api','rememberView');
 const sendSource=src.slice(src.indexOf('async function sendOrStop'),src.indexOf('\nfunction newTask',src.indexOf('async function sendOrStop')));
 
+test('opening the HTML file goes to the local service before any API request',async()=>{
+  const redirects=[];let requests=0;
+  const c=vm.createContext({location:{protocol:'file:',replace:url=>redirects.push(url)},
+    api:async()=>{requests++;throw Error('file URLs cannot reach the API');}});
+  vm.runInContext(src.split('\n').find(l=>l.startsWith('async function boot('))+';this.boot=boot;',c);
+  await c.boot();
+  assert.deepEqual(redirects,['http://127.0.0.1:8891/']);
+  assert.equal(requests,0);
+});
+
 test('concurrent old-token requests both retry once after a server restart',async()=>{
   const posts=[];
   const c=vm.createContext({token:'old',DOMParser:class{parseFromString(){return {querySelector:()=>({content:'fresh'})};}},fetch:async(url,opt)=>{

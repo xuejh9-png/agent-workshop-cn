@@ -130,6 +130,30 @@ class V12Tests(unittest.TestCase):
         self.assertEqual(run['status'], 'failed')
         self.assertEqual(len(self.fake.calls), 1)
 
+    def test_non_dict_manager_reply_fails_run_and_unblocks_queue(self):
+        self.fake.responses = ['[{"x":1}]']
+        run = self.wait(self.start()['id'])
+        self.assertEqual(run['status'], 'failed')
+        self.assertIn('结构无法解析', run['error'])
+        # The next task must be accepted instead of hitting "已有任务执行中".
+        follow = self.wait(self.start(text='再来一次')['id'])
+        self.assertEqual(follow['status'], 'completed')
+
+    def test_empty_manager_answer_is_a_failure_not_blank_success(self):
+        self.fake.responses = [{'route': 'answer', 'answer': '   ', 'tasks': [], 'task': '', 'reason': ''}]
+        run = self.wait(self.start()['id'])
+        self.assertEqual(run['status'], 'failed')
+        self.assertIn('空回答', run['error'])
+
+    def test_file_routes_require_owning_project(self):
+        other = self.app.projects.create_project('别的项目')
+        self.assertEqual(self.app.workspace_for(self.pid), self.pid)
+        self.assertEqual(self.app.workspace_for(self.pid, self.pid), self.pid)
+        with self.assertRaises(ValueError):
+            self.app.workspace_for(other['id'], self.pid)
+        with self.assertRaises(ValueError):
+            self.app.workspace_for('missing', self.pid)
+
     # --- per-step durability --------------------------------------------
     def test_later_failure_keeps_earlier_step_output(self):
         self.fake.responses = [delegate(('codex', '第一件事'), ('codex', '第二件事')),
@@ -206,11 +230,42 @@ class V12Tests(unittest.TestCase):
         self.assertIsNotNone(self.app.cancel(run['id']))
 
     def test_cancel_http_requires_project_id(self):
-        # The handler must not fall back to the internal no-pid path.
-        import inspect, server
-        src = inspect.getsource(server.Handler.do_POST)
-        self.assertIn("data.get('projectId')", src)
-        self.assertIn('缺少项目归属', src)
+        # Drive the real handler instead of asserting on source text.
+        import threading, urllib.error, urllib.request
+        from server import make_server
+        srv = make_server(0, Path(self.temp.name) / 'http')
+        srv.app.adapter = self.fake
+        srv.app.store.put('settings', 'v2', settings_v2())
+        srv.app.store.put('settings', 'verified_v2', {KEY + MANAGER: {'at': 't'}, KEY + EMPLOYEE: {'at': 't'}})
+        pid = srv.app.store.all('project')[0]['id']
+        thread = threading.Thread(target=srv.serve_forever, daemon=True); thread.start()
+        host = '127.0.0.1:%d' % srv.server_port
+
+        def call(path, body):
+            request = urllib.request.Request('http://' + host + path, data=json.dumps(body).encode(),
+                                             method='POST', headers={'Host': host, 'Content-Type': 'application/json',
+                                                                     'X-Studio-Token': srv.app.token})
+            try:
+                with urllib.request.urlopen(request, timeout=10) as response: return response.status, json.load(response)
+            except urllib.error.HTTPError as error: return error.code, json.load(error)
+
+        try:
+            _, run = call('/api/runs', {'schemaVersion': 2, 'projectId': pid, 'conversationId': None,
+                                        'text': '取消归属', 'managerHost': 'codex', 'allowedEmployees': [],
+                                        'allowWrite': False, 'requestId': 'http-cancel-1'})
+            srv.app.workers[run['id']].join(5)
+            status, body = call('/api/cancel', {'id': run['id']})
+            self.assertEqual(status, 400)
+            self.assertIn('缺少项目归属', body['error'])
+            _, other = call('/api/projects', {'name': 'HTTP别的项目'})
+            status, body = call('/api/cancel', {'id': run['id'], 'projectId': other['id']})
+            self.assertEqual(status, 400)
+            self.assertIn('不属于当前项目', body['error'])
+            status, body = call('/api/cancel', {'id': run['id'], 'projectId': pid})
+            self.assertEqual(status, 200)
+            self.assertEqual(body['id'], run['id'])
+        finally:
+            srv.shutdown(); srv.server_close(); srv.app.store.db.close()
 
     def test_conversation_cannot_be_reused_across_projects(self):
         first = self.wait(self.start()['id'])

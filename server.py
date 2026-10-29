@@ -232,8 +232,14 @@ class Studio:
             result=self.adapter.call(ident,run['requestedModel'],run['effort'],instructions+'\n允许员工：'+json.dumps(allowed)+'\n已授权文件名：'+json.dumps(manifest,ensure_ascii=False)+'\n近期项目对话：'+json.dumps(history,ensure_ascii=False)+'\n用户：'+run['text'],root,lambda e:self.event(ident,e),lambda:ident in self.cancelled,coordinator=True)
             calls.append({k:v for k,v in result.items() if k!='text'});self.patch(ident,calls=calls)
             decision=json.loads(result['text'])
+            # A schema-valid envelope can still arrive as a list or scalar; without
+            # this the worker thread dies and the run stays "running" forever.
+            if not isinstance(decision,dict):raise RuntimeError('项目经理返回的结构无法解析，请重试')
+            reason=str(decision.get('reason') or '')[:800]
             if decision.get('route')=='answer':
-                self.patch(ident,route='answer',answer=decision.get('answer',''),status='completed',ended=now());return
+                answer=decision.get('answer')
+                if not isinstance(answer,str) or not answer.strip():raise RuntimeError('项目经理返回了空回答，请重试或换一个型号')
+                self.patch(ident,route='answer',answer=answer,status='completed',ended=now());return
             if decision.get('route')!='delegate':raise RuntimeError('项目经理返回的安排无法执行')
             tasks=decision.get('tasks',[])
             if not tasks and decision.get('task') and allowed:tasks=[{'employee':allowed[0],'task':decision['task']}]
@@ -244,7 +250,7 @@ class Studio:
             for task in tasks:
                 if not isinstance(task,dict) or task.get('employee') not in allowed:raise RuntimeError('项目经理安排了未被本次授权的员工，已阻止执行')
                 if not isinstance(task.get('task'),str) or not 1<=len(task['task'])<=12000:raise RuntimeError('员工任务格式无效')
-            self.patch(ident,route='delegate',kind='task',phase='employee');self.event(ident,{'type':'manager.delegated','reason':decision.get('reason','')[:800],'steps':len(tasks)})
+            self.patch(ident,route='delegate',kind='task',phase='employee');self.event(ident,{'type':'manager.delegated','reason':reason,'steps':len(tasks)})
             for step,task in enumerate(tasks,1):
                 if ident in self.cancelled:raise InterruptedError('已停止')
                 if self.config.identity()!=run['connectionSnapshot']:raise RuntimeError('登录身份或连接变化，已停止后续员工调用，请重新验证')
@@ -271,11 +277,21 @@ class Studio:
             self.patch(ident,calls=calls,status='completed',ended=now())
         except InterruptedError:self.patch(ident,status='cancelled',ended=now(),error='执行器已停止；已创建文件不会自动撤销')
         except (RuntimeError,ValueError,OSError,TimeoutError) as exc:self.patch(ident,status='failed',calls=calls,error=str(exc)[:500],ended=now())
+        except Exception:
+            # An unexpected shape from the model must fail the run, never leave
+            # it "running" with a dead worker (which blocks every later task).
+            self.patch(ident,status='failed',calls=calls,error='执行过程中出现未预期的错误，本次已停止',ended=now())
         finally:
             audit=self.data/(ident+'.audit.jsonl')
             if audit.exists():
                 try:self.patch(ident,files=[json.loads(line) for line in audit.read_text().splitlines()])
                 except (ValueError,OSError):pass
+    def workspace_for(self,pid,workspace=None):
+        # File routes must resolve the workspace through its project, so a
+        # bare workspace id cannot reach another project's files.
+        project=self.projects.project(pid)
+        if workspace and workspace!=project['workspace']:raise ValueError('工作空间不属于当前项目')
+        return project['workspace']
     def run_for(self,ident,pid):
         # A run is readable only inside the project that owns it: a stale or
         # forged id from another project must not leak its history or files.
@@ -327,9 +343,9 @@ class Handler(BaseHTTPRequestHandler):
                 cid=q.get('id',[''])[0];pid=q.get('projectId',[''])[0];self.app.projects.project(pid);self.app.projects.conversation(cid,pid);before=q.get('before',[None])[0];self.send(self.app.projects.page(cid,int(before) if before else None))
             elif path.path=='/api/progress':self.send(self.app.progress(q.get('conversationId',[''])[0],q.get('projectId',[''])[0],json.loads(q.get('cursor',['{}'])[0])))
             elif path.path=='/api/run':self.send(self.app.run_for(q.get('id',[''])[0],q.get('projectId',[''])[0]))
-            elif path.path=='/api/files':self.send(ScopedFiles(self.app.root(q.get('workspace',[''])[0])).listing())
+            elif path.path=='/api/files':self.send(ScopedFiles(self.app.root(self.app.workspace_for(q.get('projectId',[''])[0],q.get('workspace',[''])[0]))).listing())
             elif path.path=='/api/file':
-                workspace=q.get('workspace',[''])[0];name=q.get('name',[''])[0];self.send({'name':name,'text':ScopedFiles(self.app.root(workspace)).read(name)})
+                workspace=self.app.workspace_for(q.get('projectId',[''])[0],q.get('workspace',[''])[0]);name=q.get('name',[''])[0];self.send({'name':name,'text':ScopedFiles(self.app.root(workspace)).read(name)})
             else:self.send({'error':'页面不存在'},404)
         except (ValueError,OSError,RuntimeError) as e:self.send({'error':str(e)[:300]},400)
     def do_POST(self):
@@ -359,7 +375,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(title,str) or not 1<=len(title.strip())<=60:raise ValueError('对话标题为1–60字')
                 conv['title']=title.strip();self.app.store.put('conversation',conv['id'],conv);value=conv
             elif path=='/api/upload':
-                root=self.app.root(data.get('workspace'));name=data.get('name');content=data.get('text')
+                root=self.app.root(self.app.workspace_for(data.get('projectId'),data.get('workspace')));name=data.get('name');content=data.get('text')
                 value=ScopedFiles(root,True).create(name,content)
             else:self.send({'error':'接口不存在'},404);return
             self.send(value)

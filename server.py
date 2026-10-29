@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import urlsplit,parse_qs
 import base64, hashlib, json, os, secrets, signal, sqlite3, threading, time, uuid
 from file_tools import ScopedFiles, MAX_FILE
-from runtime import CodexAdapter,ClaudeAdapter,WorkBuddyAdapter,TERMINAL
+from runtime import CodexAdapter,ClaudeAdapter,WorkBuddyAdapter,TERMINAL,save_workbuddy_key,workbuddy_key_present
 from v12 import Configurations,Projects
 
 ROOT=Path(__file__).resolve().parent
@@ -212,15 +212,20 @@ class Studio:
         verified=self.verified();verified[model]=entry;self.store.put('settings','verified',verified)
     def host_status(self,host):
         name={'codex':'Codex','claude':'Claude Code','workbuddy':'WorkBuddy'}[host]
-        error=None
+        error=None;models=[]
+        # The model list and the login state are separate facts: knowing which
+        # models a host offers must not depend on it being signed in yet.
+        try:models=self.adapter_for(host).catalog()
+        except (RuntimeError,ValueError,OSError) as exc:error=str(exc)[:200]
         # Only the CLI-backed hosts can fail transiently at startup; a missing
         # WorkBuddy key is a configuration fact, not something to retry.
         attempts=3 if host in ('codex','claude') else 1
         for attempt in range(attempts):
             try:
-                identity=self.config.identity(host);models=self.adapter_for(host).catalog()
+                identity=self.config.identity(host)
+                if not models:models=self.adapter_for(host).catalog()
                 self.host_cache=[host,identity,models]
-                return {'id':host,'name':name,'supported':True,'identity':identity,'models':models,'error':None}
+                return {'id':host,'name':name,'supported':True,'identity':identity,'models':models,'error':None,'keyPresent':True}
             except (RuntimeError,ValueError,OSError) as exc:
                 # A just-started CLI can refuse the first probe; one transient
                 # failure must not tell the user their host is not connected.
@@ -228,12 +233,12 @@ class Studio:
                 if attempt<attempts-1:time.sleep(1.5+attempt)
         cached=getattr(self,'host_cache',None)
         if cached and cached[0]==host:
-            return {'id':host,'name':name,'supported':True,'identity':cached[1],'models':cached[2],'error':None,'stale':True}
-        return {'id':host,'name':name,'supported':False,'identity':None,'models':[],'error':error}
+            return {'id':host,'name':name,'supported':True,'identity':cached[1],'models':cached[2],'error':None,'stale':True,'keyPresent':True}
+        return {'id':host,'name':name,'supported':False,'identity':None,'models':models,'error':error,'keyPresent':workbuddy_key_present() if host=='workbuddy' else True}
     def boot_v12(self):
         codex=self.host_status('codex');claude=self.host_status('claude');workbuddy=self.host_status('workbuddy')
         status={h['id']:h for h in (codex,claude,workbuddy)}
-        return {'activeRuns':[r for r in self.store.all('run') if r['status'] not in TERMINAL],'schemaVersion':2,'projects':self.store.all('project'),'conversations':self.projects.listing()[:100],'settings':self.config.get(),'models':codex['models'],'catalogByHost':{k:v['models'] for k,v in status.items()},'verification':self.config.verified(),'connection':codex['identity'],'connectionError':codex['error'],'connections':{k:v['identity'] for k,v in status.items()},'hostErrors':{k:v['error'] for k,v in status.items()},'hosts':[{'id':k,'name':v['name'],'supported':v['supported'],'reason':v['error']} for k,v in status.items()]}
+        return {'activeRuns':[r for r in self.store.all('run') if r['status'] not in TERMINAL],'schemaVersion':2,'projects':self.store.all('project'),'conversations':self.projects.listing()[:100],'settings':self.config.get(),'models':codex['models'],'catalogByHost':{k:v['models'] for k,v in status.items()},'verification':self.config.verified(),'connection':codex['identity'],'connectionError':codex['error'],'connections':{k:v['identity'] for k,v in status.items()},'hostErrors':{k:v['error'] for k,v in status.items()},'hosts':[{'id':k,'name':v['name'],'supported':v['supported'],'reason':v['error'],'keyPresent':v['keyPresent']} for k,v in status.items()],'hostKeyPresent':{k:v['keyPresent'] for k,v in status.items()}}
     def start_v12(self,body):
         with self.lock:
             if self.stopping:raise ValueError('服务正在停止')
@@ -411,6 +416,10 @@ class Handler(BaseHTTPRequestHandler):
                 value=self.app.cancel(data.get('id'),data.get('projectId'))
             elif path=='/api/settings':
                 with self.app.lock:value=self.app.config.save(data)
+            elif path=='/api/host-key':
+                # Writes the key to a private local file; the value is never echoed back.
+                if data.get('host')!='workbuddy':raise ValueError('该宿主不需要在此配置密钥')
+                value=save_workbuddy_key(data.get('key'))
             elif path=='/api/verify':value=self.app.config.verify(data.get('host'),data.get('model'),data.get('effort','low'))
             elif path=='/api/discover':self.app.adapter.catalog(refresh=True);value=self.app.boot_v12()
             elif path in ('/api/workspaces','/api/projects'):value=self.app.projects.create_project(data.get('name'))

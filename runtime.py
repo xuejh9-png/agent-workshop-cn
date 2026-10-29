@@ -181,10 +181,12 @@ class CodexAdapter:
 
 
 CLAUDE_DEFAULT='/Users/c0437/.local/bin/claude'
+# The CLI takes family aliases; the version a given alias resolves to is only
+# known after a real call, which is exactly what verification records.
 CLAUDE_MODELS=[
-    {'id':'opus','name':'Claude Opus','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model 别名'},
-    {'id':'sonnet','name':'Claude Sonnet','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model 别名'},
-    {'id':'haiku','name':'Claude Haiku','efforts':['low','medium','high'],'defaultEffort':'low','source':'Claude Code --model 别名'},
+    {'id':'opus','name':'Claude Opus 5.5','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model opus'},
+    {'id':'sonnet','name':'Claude Sonnet 5.5','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model sonnet'},
+    {'id':'haiku','name':'Claude Haiku 5.5','efforts':['low','medium','high'],'defaultEffort':'low','source':'Claude Code --model haiku'},
 ]
 
 def claude_binary():
@@ -266,14 +268,20 @@ class ClaudeAdapter:
 
 
 WORKBUDDY_CLI='/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy-lite-wb.mjs'
-WORKBUDDY_MODELS=[
-    {'id':'auto','name':'WorkBuddy 自动','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
-    {'id':'glm-5.1','name':'GLM 5.1','efforts':['low','medium','high','xhigh'],'defaultEffort':'high','source':'CodeBuddy CLI --model'},
-    {'id':'glm-5.0-turbo','name':'GLM 5.0 Turbo','efforts':['low','medium','high'],'defaultEffort':'high','source':'CodeBuddy CLI --model'},
-    {'id':'kimi-k2.5','name':'Kimi K2.5','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
-    {'id':'minimax-m2.7','name':'MiniMax M2.7','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
-    {'id':'deepseek-v3-2-volc','name':'DeepSeek V3.2','efforts':['low','medium','high'],'defaultEffort':'medium','source':'CodeBuddy CLI --model'},
-]
+def workbuddy_models():
+    """Read the CLI's own model list. Hardcoding names here would drift and would
+    have missed models the user actually uses (e.g. DeepSeek-V4.1-Flash)."""
+    path=Path(workbuddy_cli()).parent.parent/'product.json'
+    try:data=json.loads(path.read_text())
+    except (OSError,ValueError):raise RuntimeError('无法读取 WorkBuddy 型号目录')
+    out=[]
+    for m in data.get('models') or []:
+        if not m.get('supportsToolCall'):continue
+        ident=m.get('id')
+        if not ident or ident=='default':continue
+        out.append({'id':ident,'name':m.get('name') or ident,'efforts':['low','medium','high','xhigh'],'defaultEffort':'medium','source':'WorkBuddy product.json'})
+    if not out:raise RuntimeError('WorkBuddy 型号目录为空')
+    return sorted(out,key=lambda m:(m['id']!='auto',m['id']))
 
 def workbuddy_cli():
     # The desktop app ships the CLI but does not put it on PATH. Only the
@@ -282,6 +290,21 @@ def workbuddy_cli():
     path=Path(override or WORKBUDDY_CLI)
     if not path.is_file():raise RuntimeError('未找到 WorkBuddy 自带的 CodeBuddy CLI')
     return str(path)
+
+def save_workbuddy_key(key):
+    """Write the user's key to a private file. Never return or log its content."""
+    if not isinstance(key,str) or not key.strip() or len(key.strip())>512 or any(c in key for c in '\r\n\x00'):
+        raise ValueError('API Key 格式无效')
+    path=Path.home()/'.workbuddy/api-key'
+    path.parent.mkdir(parents=True,exist_ok=True)
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'w') as f:f.write(key.strip())
+    os.chmod(path,0o600)
+    return {'host':'workbuddy','configured':True,'path':str(path)}
+
+def workbuddy_key_present():
+    try:workbuddy_credentials();return True
+    except RuntimeError:return False
 
 def workbuddy_credentials():
     # The key is read from the environment or from a file the user controls.
@@ -304,7 +327,7 @@ class WorkBuddyAdapter:
     """WorkBuddy's bundled CodeBuddy CLI as an employee, with the same scoped tools."""
     def __init__(self,data):
         self.data=Path(data);self.processes={};self.lock=threading.RLock()
-    def catalog(self,refresh=False):return [dict(m) for m in WORKBUDDY_MODELS]
+    def catalog(self,refresh=False):return [dict(m) for m in workbuddy_models()]
     def identity(self):
         workbuddy_cli();workbuddy_credentials()
         salt=self.data/'connection-namespace'

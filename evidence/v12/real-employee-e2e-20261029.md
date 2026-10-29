@@ -101,3 +101,25 @@ tool.started/completed read_file   (step2)
 ## 清理
 
 隔离实例为临时用途，数据目录 `/tmp/studio_e2e/data` 与 8892 进程在取证后停止/丢弃；未写入本机 `.studio`，未提交任何 `notes.md` 或 SQLite。
+
+
+## 追加：Claude Code 作为第二员工（同日 14:1x–14:3x）
+
+同一隔离数据目录之外，另在本机 `.studio` 上完成了第二个宿主的接入与真实运行。
+
+- 前置验证：`POST /api/verify {host:claude, model:opus, effort:high}` → 200，2m10s，
+  `actualModel=claude-opus-5-5`，`costUSD=0.104248`，账号绑定 `57f35b4b…`（端点哈希，不含令牌）。
+- 首个双员工任务（run `a01c9740`）失败：员工第 2 步把 `opus` 发给了 Codex 适配器，
+  报「模型调用失败」。定位为接线遗漏（经理调用已按宿主分派，员工调用仍用 `self.adapter`）。
+- 修复后重跑（run `f0714188`，`allowedEmployees=["codex","claude"]`）：
+  - 状态 `completed`，3 次真实调用：经理 `gpt-6.1-sol`（in 15438 / out 383）、
+    Codex 第 1 步（in 62133 / out 338）、Claude 第 2 步（`claude-opus-5-5`，in 80 / out 1875，$0.1669）。
+  - 步骤记录：step1 `codex` completed、step2 `claude` completed，页面显示
+    「你 / Codex·第1步 / Claude Code·第2步」，不再出现重复的经理聚合气泡。
+  - 文件审计仅 `read`，无写入；Claude 步骤通过同一 `file_tools` MCP 读取，未获 Shell。
+  - 第二步正确指出 `requirements.md` 要求「最多两句」与任务要求「恰好三句」的冲突，
+    并说明未自行取舍——不是照抄指令，这点可作后续验收观察点。
+- 测试：48/48（新增「员工步骤使用各自适配器」；未验证的 Claude 型号仍被 settings 拒绝）。
+
+仍未验证：Claude Code 作为「经理」（只验证过作为员工）、WorkBuddy、取消时 Claude 进程组的实际回收时间、
+外网/断网下的失败表现。

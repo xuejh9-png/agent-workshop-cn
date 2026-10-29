@@ -1,5 +1,7 @@
 > **G5 本机工程验收完成，待负责人产品验收。** 最新固定被测实现 `45e9725a8be3381c1ac7d87418f346c99d7c8b8f`，逐项证据见 `evidence/v12/g5/REPORT.md`。原暂停交接保留作历史资料，WorkBuddy文件工具限制继续生效。
 
+> **2026-10-29 产品验收反馈已局部调整侧栏**：项目标题右侧常显新建对话，资料与源码收进项目菜单，无分享入口。被测实现 `1df4e334d7e28d3195ab0d64ca00b56c9b261cf5`，103项回归及桌面/375窄屏深浅色实测通过，详见 [侧栏证据](evidence/v12/sidebar-refinement-20261029/REPORT.md)。负责人视觉验收仍待确认。
+
 # 当前任务｜Agent Studio v1.2：项目经理、员工授权、项目对话与真实协作
 
 > 2026-10-29｜状态：G5 LOCAL_ENGINEERING_VERIFIED / HUMAN_ACCEPTANCE_PENDING

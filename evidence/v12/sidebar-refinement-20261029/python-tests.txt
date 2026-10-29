@@ -1,0 +1,35 @@
+....................................../Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=8 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=9 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=10 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./Users/c0437/.workbuddy/binaries/python/versions/3.13.12/lib/python3.13/traceback.py:269: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=8 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/c0437/Desktop/agent-studio-v01/tests/test_runtime_hosts.py:18: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='UTF-8'>
+  return WorkBuddyAdapter(self.root).call('test','deepseek-v4.1-flash','low','probe',self.root,lambda e:None,lambda:False)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................................................
+----------------------------------------------------------------------
+Ran 91 tests in 3.775s
+
+OK

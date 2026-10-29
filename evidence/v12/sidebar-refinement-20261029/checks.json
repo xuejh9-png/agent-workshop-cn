@@ -1,0 +1,64 @@
+[
+  {
+    "case": "header-new-chat",
+    "focus": "ta",
+    "oldTools": 0,
+    "project": "G5 项目A",
+    "turns": 0
+  },
+  {
+    "case": "new-chat-preserves-history",
+    "historyCount": 1
+  },
+  {
+    "case": "settings-target-project",
+    "text": "当前项目的本机真实文件\n\nG5项目B独占资料，禁止串入其他项目。"
+  },
+  {
+    "case": "rename-target-project",
+    "value": "G5 项目B"
+  },
+  {
+    "case": "escape-restores-menu-trigger",
+    "focus": "项目菜单 G5 项目B",
+    "hidden": true
+  },
+  {
+    "case": "keyboard-opens-settings",
+    "heading": 1
+  },
+  {
+    "case": "settings-source-entry",
+    "heading": 1
+  },
+  {
+    "case": "history-access",
+    "historyVisible": true
+  },
+  {
+    "case": "menu-actions-no-sharing",
+    "actions": [
+      "重命名项目",
+      "项目设置",
+      "项目主页",
+      "更多历史对话"
+    ],
+    "sharing": false
+  },
+  {
+    "case": "mobile-light",
+    "composeVisible": true,
+    "documentWidth": 375,
+    "menuLeft": 147,
+    "menuRight": 365,
+    "oldTools": 0,
+    "sameHeaderRow": true,
+    "viewport": 375
+  },
+  {
+    "case": "mobile-dark",
+    "documentWidth": 375,
+    "menuVisible": true,
+    "theme": "dark"
+  }
+]

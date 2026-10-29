@@ -55,7 +55,20 @@ async function openConversation(cid,pid){state.workspace=pid;state.conversation=
 // for. A reply that arrives after the user switched away is dropped instead of
 // being merged into whatever conversation is on screen now.
 let loadSeq=0;
-async function loadConversation(older=false){const cid=state.conversation,pid=state.workspace;if(!cid||!pid)return;const before=older&&state.before?state.before:null;const seq=++loadSeq;try{const height=$('scroll').scrollHeight;const page=await api('/api/conversation?id='+encodeURIComponent(cid)+'&projectId='+encodeURIComponent(pid)+(before?'&before='+before:''));if(!page?.conversation||page.conversation.id!==cid||cid!==state.conversation||pid!==state.workspace)return;page.runs.filter(Boolean).forEach(acceptRun);page.messages.forEach(m=>state.messages.set(m.id,m));if(seq===loadSeq)state.before=page.before;const i=state.conversations.findIndex(c=>c.id===page.conversation.id);if(i<0)state.conversations.push(page.conversation);else state.conversations[i]=page.conversation;render();if(older)$('scroll').scrollTop=$('scroll').scrollHeight-height;else $('scroll').scrollTop=$('scroll').scrollHeight;schedulePoll();}catch(e){if(cid===state.conversation&&pid===state.workspace)toast(e.message);}}
+let paging=false;
+async function loadConversation(older=false){const cid=state.conversation,pid=state.workspace;if(!cid||!pid)return;
+// One paging read at a time: a double click must not fire two requests against
+// the same cursor and let the slower one move the cursor backwards.
+if(older&&paging)return;if(older)paging=true;
+const before=older&&state.before?state.before:null;const seq=++loadSeq;
+try{const height=$('scroll').scrollHeight;const page=await api('/api/conversation?id='+encodeURIComponent(cid)+'&projectId='+encodeURIComponent(pid)+(before?'&before='+before:''));if(!page?.conversation||page.conversation.id!==cid||cid!==state.conversation||pid!==state.workspace)return;
+page.runs.filter(Boolean).forEach(acceptRun);page.messages.forEach(m=>state.messages.set(m.id,m));
+// A superseded reply may still add older messages, but it must not touch the
+// cursor or the scroll position: a newer read already owns both.
+if(seq!==loadSeq)return;
+state.before=page.before;const i=state.conversations.findIndex(c=>c.id===page.conversation.id);if(i<0)state.conversations.push(page.conversation);else state.conversations[i]=page.conversation;render();if(older)$('scroll').scrollTop=$('scroll').scrollHeight-height;else $('scroll').scrollTop=$('scroll').scrollHeight;schedulePoll();
+}catch(e){if(cid===state.conversation&&pid===state.workspace)toast(e.message);}
+finally{if(older)paging=false;}}
 function toggleProject(pid){if(pid!==state.workspace){newTask(pid);return;}if(state.expanded.has(pid))state.expanded.delete(pid);else state.expanded.add(pid);renderSidebar();}
 function renderSidebar(){const signature=JSON.stringify([state.projects,state.conversations,state.workspace,state.conversation,[...state.expanded]]);if(signature===sidebarSignature)return;sidebarSignature=signature;
 document.querySelector('.sb-scroll').innerHTML='<div class="project-label"><span>项目</span><button aria-label="新建项目" onclick="projectDialog()">＋</button></div>'+state.projects.map(p=>`<section><div class="project-row ${p.id===state.workspace?'selected':''}"><button class="project-title" onclick="toggleProject('${p.id}')" aria-expanded="${state.expanded.has(p.id)}"><span>${state.expanded.has(p.id)?'⌄':'›'}</span><span>${esc(p.name)}</span></button><button class="rename" aria-label="重命名项目 ${esc(p.name)}" onclick="projectDialog('${p.id}')">⋯</button></div>${state.expanded.has(p.id)?`<div class="project-children"><button class="project-tools" onclick="knowledge('${p.id}')">项目资料与指令</button><button class="project-tools" onclick="newTask('${p.id}')">＋ 新建对话</button>${state.conversations.filter(c=>c.projectId===p.id).sort((a,b)=>b.updated.localeCompare(a.updated)).map(c=>`<button class="${c.id===state.conversation?'active':''}" onclick="openConversation('${c.id}','${p.id}')" title="${esc(c.title)}">${esc(c.title)}</button>`).join('')}<button class="project-tools" onclick="loadMoreConversations('${p.id}')">更多历史对话…</button></div>`:''}</section>`).join('');}

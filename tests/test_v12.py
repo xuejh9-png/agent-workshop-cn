@@ -199,6 +199,43 @@ class V12Tests(unittest.TestCase):
         self.app.projects.page(run['conversationId'])
         self.assertEqual(before, len(self.app.projects.messages(run['conversationId'])))
 
+    def test_missing_step_message_is_reconciled_on_read(self):
+        self.fake.responses = [delegate(('codex', '一'), ('codex', '二')), '结果一', '结果二']
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        cid = run['conversationId']
+        before = {m['id']: m for m in self.app.projects.messages(cid)}
+        # Simulate a failed message write: the step is durable on the run only.
+        self.app.store.db.execute("DELETE FROM records WHERE kind='message' AND id=?",
+                                  (run['id'] + ':step:2',))
+        self.app.store.db.commit()
+        page = self.app.projects.page(cid)
+        ids = [m['id'] for m in page['messages']]
+        self.assertIn(run['id'] + ':step:2', ids)
+        sequences = [m['sequence'] for m in page['messages']]
+        self.assertEqual(sequences, sorted(sequences))
+        self.assertEqual(len(sequences), len(set(sequences)))
+        # Repair is idempotent: a second read must not add anything.
+        again = self.app.projects.page(cid)
+        self.assertEqual(ids, [m['id'] for m in again['messages']])
+        # Existing rows keep their content.
+        repaired = {m['id']: m for m in again['messages']}
+        self.assertEqual(repaired[run['id'] + ':step:1']['text'], before[run['id'] + ':step:1']['text'])
+        self.assertEqual(repaired[run['id'] + ':step:2']['text'], '结果二')
+
+    def test_step_messages_are_reordered_by_step_number(self):
+        self.fake.responses = [delegate(('codex', '一'), ('codex', '二')), '结果一', '结果二']
+        run = self.wait(self.start(allowedEmployees=['codex'])['id'])
+        cid = run['conversationId']
+        first = self.app.store.get('message', run['id'] + ':step:1')
+        second = self.app.store.get('message', run['id'] + ':step:2')
+        first['sequence'], second['sequence'] = second['sequence'], first['sequence']
+        self.app.store.put_many([('message', first['id'], first), ('message', second['id'], second)])
+        page = self.app.projects.page(cid)
+        steps = [m for m in page['messages'] if m.get('step')]
+        self.assertEqual([m['step'] for m in steps], [1, 2])
+        self.assertEqual(sorted(m['sequence'] for m in steps),
+                         sorted([first['sequence'], second['sequence']]))
+
     # --- /api/run ownership ---------------------------------------------
     def test_run_for_rejects_other_project_and_unknown(self):
         run = self.wait(self.start()['id'])

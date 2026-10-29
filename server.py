@@ -102,7 +102,11 @@ class Studio:
             completed=[s for s in items if s.get('status')=='completed' and s.get('text')]
             run['answer']=('\n\n'.join(f'任务{s["step"]}：\n'+s['text'] for s in completed) if len(completed)>1 else completed[0]['text'] if completed else '')
             run['version']=run.get('version',0)+1;self.store.put('run',ident,run)
-            if hasattr(self,'projects'):self.projects.sync(run);self.projects.step_message(run,next(s for s in items if s['step']==number))
+            if hasattr(self,'projects'):
+                # The run record is already durable; a message write failure must
+                # not fail the run. page() reconciles the missing row on read.
+                try:self.projects.sync(run);self.projects.step_message(run,next(s for s in items if s['step']==number))
+                except (sqlite3.Error,OSError):pass
             return run
     def start(self,body):
         with self.lock:

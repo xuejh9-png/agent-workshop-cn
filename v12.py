@@ -116,7 +116,31 @@ class Projects:
         if not value or (pid and value['projectId']!=pid):raise ValueError('对话不属于当前项目')
         return value
     def messages(self,cid):return sorted([m for m in self.store.all('message') if m['conversationId']==cid],key=lambda m:m['sequence'])
+    def reconcile(self,cid):
+        # A step can be durable on the run while its message write failed, or the
+        # message rows can be out of step order. Repair on read so the conversation
+        # never hides a step that really happened, and never shows them shuffled.
+        messages=self.messages(cid);pending={}
+        for run in self.store.all('run'):
+            steps=sorted(run.get('steps') or [],key=lambda s:s['step'])
+            if run.get('conversationId')!=cid or not steps:continue
+            existing=[m for m in messages if m['runId']==run['id'] and m.get('step')]
+            present={m['step'] for m in existing}
+            for s in steps:
+                if s['step'] in present:continue
+                seq=max([m['sequence'] for m in messages]+[x['sequence'] for x in pending.values()],default=0)+1
+                mid=run['id']+':step:'+str(s['step'])
+                record={'id':mid,'conversationId':cid,'projectId':run['workspace'],'runId':run['id'],'role':'assistant','step':s['step'],'employee':s.get('employee'),'requestedModel':s.get('requestedModel'),'text':s.get('text',''),'status':s.get('status'),'error':s.get('error'),'sequence':seq}
+                pending[mid]=record;existing.append(record)
+            # Keep the run's steps in step order inside their own slot range.
+            ordered=sorted(existing,key=lambda m:m['sequence'])
+            if [m['step'] for m in ordered]==[s['step'] for s in steps]:continue
+            for slot,s in zip([m['sequence'] for m in ordered],steps):
+                m=next(x for x in ordered if x['step']==s['step'])
+                if m['sequence']!=slot:m['sequence']=slot;pending[m['id']]=m
+        if pending:self.store.put_many([('message',k,v) for k,v in pending.items()])
     def page(self,cid,before=None,limit=40):
+        self.reconcile(cid)
         conv=self.conversation(cid);allmessages=self.messages(cid)
         if before is not None:allmessages=[m for m in allmessages if m['sequence']<before]
         page=allmessages[-max(1,min(limit,100)):];runs={m['runId']:self.store.get('run',m['runId']) for m in page}

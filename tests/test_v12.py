@@ -236,6 +236,28 @@ class V12Tests(unittest.TestCase):
         self.assertEqual(sorted(m['sequence'] for m in steps),
                          sorted([first['sequence'], second['sequence']]))
 
+    def test_each_employee_step_uses_its_own_adapter(self):
+        claude = FakeV12()
+        claude.catalog = lambda refresh=False: [{'id': 'opus', 'efforts': ['low', 'high'], 'defaultEffort': 'high'}]
+        claude.calls = []
+        self.app.claude = claude
+        settings = settings_v2()
+        settings['employeeProfilesByHost']['claude'] = {'enabled': True, 'model': 'opus', 'effort': 'high'}
+        self.app.store.put('settings', 'v2', settings)
+        self.app.store.put('settings', 'verified_v2', {
+            KEY + MANAGER: {'at': 'test'}, KEY + EMPLOYEE: {'at': 'test'},
+            'claude:acct-test:cfg-test:opus': {'at': 'test'}})
+        self.fake.responses = [delegate(('codex', '一'), ('claude', '二')), 'codex结果']
+        # The Claude-side stub answers only the Claude employee step.
+        claude.responses = ['claude结果']
+        run = self.wait(self.start(allowedEmployees=['codex', 'claude'])['id'])
+        self.assertEqual(run['status'], 'completed')
+        self.assertEqual([c['model'] for c in self.fake.calls[1:]], [EMPLOYEE])
+        self.assertEqual(len(claude.calls), 1)
+        self.assertEqual(claude.calls[0]['model'], 'opus')
+        self.assertIn('codex结果', run['steps'][0]['text'])
+        self.assertIn('claude结果', run['steps'][1]['text'])
+
     # --- /api/run ownership ---------------------------------------------
     def test_run_for_rejects_other_project_and_unknown(self):
         run = self.wait(self.start()['id'])
@@ -355,19 +377,33 @@ class V12Tests(unittest.TestCase):
         self.assertEqual(stored['managerModelByHost']['codex']['model'], EMPLOYEE)
 
     def test_settings_reject_unverified_model_and_unsupported_host(self):
+        baseline = self.app.config.get()['revision']
         body = copy.deepcopy(self.app.config.get())
         body['managerModelByHost']['codex'] = {'model': UNVERIFIED, 'effort': 'low'}
         with self.assertRaises(ValueError):
             self.app.config.save(body)
+        # Claude Code is now a real host, so an unconfigured (disabled, no model)
+        # profile is allowed; saving must still reject an unverified enabled one.
         body = copy.deepcopy(self.app.config.get())
         body['employeeProfilesByHost']['claude'] = {'enabled': False, 'model': None, 'effort': 'low'}
+        saved = self.app.config.save(body)
+        self.assertIn('claude', saved['employeeProfilesByHost'])
+        baseline = saved['revision']
+        body = copy.deepcopy(self.app.config.get())
+        body['employeeProfilesByHost']['claude'] = {'enabled': True, 'model': 'opus', 'effort': 'high'}
+        with self.assertRaises(ValueError):
+            self.app.config.save(body)
+        # A host that is not wired at all is still refused outright.
+        body = copy.deepcopy(self.app.config.get())
+        body['employeeProfilesByHost']['workbuddy'] = {'enabled': False, 'model': None, 'effort': 'low'}
         with self.assertRaises(ValueError):
             self.app.config.save(body)
         body = copy.deepcopy(self.app.config.get())
         body['reviewPolicy'] = {'enabled': True}
         with self.assertRaises(ValueError):
             self.app.config.save(body)
-        self.assertEqual(self.app.config.get()['revision'], 0)
+        # Rejected saves must not move the stored revision.
+        self.assertEqual(self.app.config.get()['revision'], baseline)
 
     def test_unsupported_manager_host_rejected_on_start(self):
         with self.assertRaises(ValueError):

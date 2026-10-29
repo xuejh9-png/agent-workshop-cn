@@ -14,14 +14,14 @@ class Configurations:
         old=self.app.settings()
         value={'schemaVersion':2,'revision':0,'productName':'Agent Studio','managerHost':'codex','managerModelByHost':{'codex':profile(old.get('coordinatorModel'),old.get('coordinatorEffort','low'))},'employeeProfilesByHost':{'codex':{'enabled':True,**profile(old.get('executorModel'),old.get('executorEffort','low'))}},'reviewPolicy':{'enabled':False},'updatedAt':stamp()}
         self.app.store.put('settings','v2',value);return value
-    def identity(self):
-        return self.app.adapter.account_identity()
+    def identity(self,host='codex'):
+        return self.app.adapter_for(host).account_identity()
     def key(self,host,model,identity):return host+':'+identity['accountId']+':'+identity['configId']+':'+model
     def verified(self):return self.app.store.get('settings','verified_v2',{})
     def check(self,host,p,identity,required=True):
-        if host!='codex':raise ValueError('该宿主尚未接入受控调用，不可使用')
+        if host not in self.app.hosts:raise ValueError('该宿主尚未接入受控调用，不可使用')
         if not isinstance(p,dict):raise ValueError('型号配置格式错误')
-        self.app.validate_model(p.get('model'),p.get('effort'),False)
+        self.app.validate_model(p.get('model'),p.get('effort'),False,host)
         if required and self.key(host,p['model'],identity) not in self.verified():raise ValueError('此宿主/当前账号/连接配置下的型号未完成真实测试，请先验证')
     def save(self,body):
         with self.app.lock:return self._save(body)
@@ -29,15 +29,21 @@ class Configurations:
         if body.get('schemaVersion')!=2:raise ValueError('请刷新到新版设置界面')
         old=self.get()
         if body.get('revision')!=old['revision']:raise ValueError('配置已被其他页面修改，请先重新读取，当前表单未保存')
-        candidate=copy.deepcopy(body);identity=self.identity();host=candidate.get('managerHost')
+        candidate=copy.deepcopy(body);host=candidate.get('managerHost')
         managers=candidate.get('managerModelByHost');employees=candidate.get('employeeProfilesByHost')
         if not isinstance(managers,dict) or not isinstance(employees,dict):raise ValueError('经理或员工配置缺失')
-        if any(h not in ('codex',) for h in set(managers)|set(employees)):raise ValueError('未接通的宿主不能保存为可用配置')
-        self.check(host,managers.get(host),identity)
+        if any(h not in self.app.hosts for h in set(managers)|set(employees)):raise ValueError('未接通的宿主不能保存为可用配置')
+        identities={}
+        for h in set(managers)|set(employees):
+            # Each host binds to its own account; one host's verification never
+            # stands in for another's.
+            try:identities[h]=self.identity(h)
+            except (RuntimeError,OSError) as exc:raise ValueError(f'{h}：{exc}')
+        self.check(host,managers.get(host),identities[host])
         for h,p in employees.items():
             if not isinstance(p,dict) or type(p.get('enabled')) is not bool:raise ValueError('员工启用状态无效')
-            if p['enabled']:self.check(h,p,identity)
-            elif p.get('model'):self.check(h,p,identity,False)
+            if p['enabled']:self.check(h,p,identities[h])
+            elif p.get('model'):self.check(h,p,identities[h],False)
         if candidate.get('reviewPolicy',{}).get('enabled'):raise ValueError('独立审核尚未接入，不可启用')
         name=candidate.get('productName','Agent Studio')
         if not isinstance(name,str) or not 1<=len(name.strip())<=60:raise ValueError('产品展示名格式无效')
@@ -45,22 +51,25 @@ class Configurations:
         self.app.store.put('settings','v2',clean)
         return self.get()
     def verify(self,host,model,effort):
-        identity=self.identity();self.check(host,profile(model,effort),identity,False)
-        result=self.app.verify(model,effort)
-        if self.identity()!=identity:raise ValueError('验证期间登录或连接配置变化，请重新验证')
+        identity=self.identity(host);self.check(host,profile(model,effort),identity,False)
+        result=self.app.verify(model,effort,host)
+        if self.identity(host)!=identity:raise ValueError('验证期间登录或连接配置变化，请重新验证')
         result={**result,'host':host,'accountId':identity['accountId'],'configId':identity['configId']}
         with self.app.lock:
             verified=self.verified();verified[self.key(host,model,identity)]=result;self.app.store.put('settings','verified_v2',verified)
         return result
     def resolve(self,host,allowed):
-        settings=self.get();identity=self.identity()
+        settings=self.get();identity=self.identity(host);identities={host:identity}
         if not isinstance(allowed,list) or len(allowed)>3 or len(set(allowed))!=len(allowed):raise ValueError('员工授权必须是无重复的列表')
         self.check(host,settings['managerModelByHost'].get(host),identity)
         snapshots={}
         for employee in allowed:
             p=settings['employeeProfilesByHost'].get(employee)
             if not p or not p.get('enabled'):raise ValueError('员工未启用或尚未接入：'+str(employee))
-            self.check(employee,p,identity);snapshots[employee]=copy.deepcopy(p)
+            # Each employee is checked against its own host's account, not the manager's.
+            identities.setdefault(employee,self.identity(employee))
+            self.check(employee,p,identities[employee]);snapshots[employee]=copy.deepcopy(p)
+        return settings,identities,snapshots
         return settings,identity,snapshots
 
 class Projects:

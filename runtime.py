@@ -58,6 +58,13 @@ class CodexAdapter:
             self.terminate(p)
 
     def account_identity(self):
+        # A freshly started app-server can answer before the CLI is ready, which
+        # would otherwise surface as a false "not logged in" right after boot.
+        try:return self._account_identity_once()
+        except RuntimeError:
+            time.sleep(1.5)
+            return self._account_identity_once()
+    def _account_identity_once(self):
         # Only an opaque account/configuration binding leaves this method. No
         # email, access token, auth file or private chat is read by the app.
         p=subprocess.Popen([codex_binary(),'app-server','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,start_new_session=True)
@@ -170,4 +177,89 @@ class CodexAdapter:
             return {'text':output,'usage':usage,'sessionId':session,'requestedModel':model,'actualModel':None,'role':role,'exitCode':code}
         finally:
             self.terminate(p)
+            with self.lock:self.processes.pop(run_id,None)
+
+
+CLAUDE_DEFAULT='/Users/c0437/.local/bin/claude'
+CLAUDE_MODELS=[
+    {'id':'opus','name':'Claude Opus','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model 别名'},
+    {'id':'sonnet','name':'Claude Sonnet','efforts':['low','medium','high','xhigh','max'],'defaultEffort':'high','source':'Claude Code --model 别名'},
+    {'id':'haiku','name':'Claude Haiku','efforts':['low','medium','high'],'defaultEffort':'low','source':'Claude Code --model 别名'},
+]
+
+def claude_binary():
+    override=os.environ.get('STUDIO_CLAUDE_BIN')
+    if override:
+        if not os.access(override,os.X_OK):raise RuntimeError('STUDIO_CLAUDE_BIN 指向的文件不可执行')
+        return override
+    found=shutil.which('claude')
+    if found:return found
+    if os.access(CLAUDE_DEFAULT,os.X_OK):return CLAUDE_DEFAULT
+    raise RuntimeError('未安装 Claude Code CLI')
+
+def claude_settings():
+    # Claude Code keeps its endpoint and token in its own settings file. Read it
+    # for the child process only; nothing here is logged, returned or stored.
+    path=Path(os.environ.get('STUDIO_CLAUDE_SETTINGS',Path.home()/'.claude/settings.json'))
+    try:value=json.loads(path.read_text())
+    except (OSError,ValueError):return {}
+    env=value.get('env') if isinstance(value.get('env'),dict) else {}
+    return {k:v for k,v in env.items() if isinstance(v,str) and v}
+
+class ClaudeAdapter:
+    """Headless Claude Code as an employee: same scoped file tools, no shell."""
+    def __init__(self,data):
+        self.data=Path(data);self.processes={};self.lock=threading.RLock()
+    def catalog(self,refresh=False):return [dict(m) for m in CLAUDE_MODELS]
+    def identity(self):
+        cfg=claude_settings();base=cfg.get('ANTHROPIC_BASE_URL','');token=cfg.get('ANTHROPIC_AUTH_TOKEN','')
+        if not base or not token:raise RuntimeError('Claude Code 未配置登录，请先在终端完成配置')
+        salt=self.data/'connection-namespace'
+        if not salt.exists():
+            import secrets
+            try:
+                fd=os.open(salt,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+                with os.fdopen(fd,'w') as f:f.write(secrets.token_hex(32))
+            except FileExistsError:pass
+        namespace=salt.read_text()
+        # Bind the account to the configured endpoint only, never to the secret.
+        return {'accountId':hashlib.sha256((namespace+'claude:'+base).encode()).hexdigest(),'configId':'claude-code-studio-v1'}
+    account_identity=identity
+    def cancel(self,run_id):
+        with self.lock:p=self.processes.get(run_id)
+        if p:CodexAdapter.terminate(p)
+    def call(self,run_id,model,effort,prompt,cwd,on_event,cancelled,coordinator=False,writable=False):
+        cfg=claude_settings();env={**os.environ,**cfg}
+        audit=self.data/(run_id+'.audit.jsonl')
+        server={'command':sys.executable,'args':[str(ROOT/'file_tools.py'),'--root',str(cwd),'--audit',str(audit)]+(['--write'] if writable else [])}
+        allowed=['mcp__studio_files__list_files','mcp__studio_files__read_file']+(['mcp__studio_files__write_file'] if writable else [])
+        cmd=[claude_binary(),'-p','--output-format','json','--model',model,'--effort',effort,
+             '--strict-mcp-config','--mcp-config',json.dumps({'mcpServers':{'studio_files':server}},ensure_ascii=False),
+             '--allowedTools',*allowed,
+             # Everything that could read, write or execute outside the scoped
+             # broker is denied explicitly rather than left to defaults.
+             '--disallowedTools','Bash','Edit','Write','Read','Glob','Grep','WebFetch','WebSearch','Task','NotebookEdit']
+        role='coordinator' if coordinator else 'executor'
+        on_event({'type':'call.started','role':role,'requestedModel':model,'effort':effort,'adapter':'claude -p','sandbox':'scoped-mcp','shell':False})
+        p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=str(cwd),start_new_session=True,env=env)
+        with self.lock:self.processes[run_id]=p
+        on_event({'type':'process.started','pid':p.pid,'processGroup':p.pid,'role':role})
+        try:
+            if cancelled():raise InterruptedError('用户已停止')
+            p.stdin.write(prompt);p.stdin.close()
+            out,err=p.communicate(timeout=300)
+            if cancelled():raise InterruptedError('用户已停止')
+            try:value=json.loads(out[out.find('{'):out.rfind('}')+1])
+            except ValueError:raise RuntimeError((err or out or 'Claude Code 未返回可解析结果')[:300])
+            if value.get('is_error'):raise RuntimeError(str(value.get('result') or 'Claude Code 调用失败')[:300])
+            text=value.get('result')
+            if not isinstance(text,str) or not text.strip():raise RuntimeError('Claude Code 返回空回答')
+            usage=value.get('usage') or {}
+            models=list((value.get('modelUsage') or {}).keys())
+            return {'text':text,'usage':{'input_tokens':usage.get('input_tokens'),'output_tokens':usage.get('output_tokens'),'cached_input_tokens':usage.get('cache_read_input_tokens')},
+                    'sessionId':value.get('session_id'),'requestedModel':model,'actualModel':models[0] if models else None,'role':role,'costUSD':value.get('total_cost_usd')}
+        except subprocess.TimeoutExpired:
+            raise TimeoutError('执行超过 300 秒，已停止本次进程')
+        finally:
+            CodexAdapter.terminate(p)
             with self.lock:self.processes.pop(run_id,None)
